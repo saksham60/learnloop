@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import Enum as SQLEnum, ForeignKey, String
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.constants import Role
+from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+
+class UserProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "user_profiles"
+
+    supabase_user_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[Role] = mapped_column(SQLEnum(Role, name="role_enum"), nullable=False, default=Role.PENDING)
+    school_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("schools.id"), nullable=True)
+    grade_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    preferences: Mapped[dict[str, Any]] = mapped_column(nullable=False, default=dict)
+
+    school = relationship("School", back_populates="users")
+    teaching_classes = relationship("ClassRoom", back_populates="teacher")
+    class_memberships = relationship("ClassStudent", back_populates="student")
+    homework_attempts = relationship("StudentAttempt", back_populates="student")
+    learning_sessions = relationship("LearningSession", back_populates="student")
+    learning_events = relationship("LearningEvent", back_populates="student")
+    focus_areas = relationship("FocusArea", back_populates="student")
+    content_uploads = relationship("ContentUpload", back_populates="uploaded_by_user")
+    growth_activities = relationship("GrowthActivity", back_populates="student")
+    agent_runs = relationship("AgentRun", back_populates="user")
+

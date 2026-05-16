@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ai-student-companion-backend
+    env: docker
+    rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: starter
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+
