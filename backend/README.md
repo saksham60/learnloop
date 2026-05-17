@@ -1,6 +1,6 @@
-# AI Student Companion Backend
+# LearnLoop AI Backend
 
-Clean-architecture FastAPI backend for an AI student companion platform with event-centric learning telemetry, deterministic rule engines, and a Gemma-only model gateway.
+FastAPI backend for LearnLoop AI.
 
 ## Stack
 
@@ -10,31 +10,11 @@ Clean-architecture FastAPI backend for an AI student companion platform with eve
 - Alembic
 - PostgreSQL / Supabase
 - httpx
-- pytest
 
-## Architecture
+## Local Setup
 
-- `app/core`: configuration, logging, security, exceptions, enums.
-- `app/db`: async session, ORM models, repositories, Alembic metadata source.
-- `app/api/v1`: versioned route surface and request/response schemas.
-- `app/features`: business services and deterministic rule engines.
-- `app/agents`: agent loop, specialists, tools, orchestrator, tracing.
-- `app/llm`: Gemma-only gateway and prompts.
-- `app/workers`: async job placeholders for future queue workers.
-
-## Key design choices
-
-- `learning_events` is the central source of truth for learning telemetry.
-- Rule engines decide what is allowed; the LLM only turns structured context into student-friendly language.
-- The agent loop is explicit: `PLAN -> ACT -> OBSERVE -> REFLECT -> UPDATE_EVENTS -> NEXT_STEP`.
-- Agent tools access data; specialist agents coordinate.
-- Content chunk storage is pgvector-ready through a custom `VECTOR` column type.
-- The backend is web-first but keeps sync and device fields ready for later offline/local evolution.
-
-## Setup
-
-1. Copy `.env.example` to `.env`.
-2. Fill all Supabase, database, and Gemma gateway values.
+1. Copy `.env.example` to `.env`
+2. Fill Supabase, database, and Gemma values
 3. Install dependencies:
 
 ```bash
@@ -53,59 +33,106 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-## Commands
+## Render Production Settings
 
-```bash
-ruff check .
-black --check .
-pytest
+Backend base URL:
+
+```text
+https://learnloop-wpdv.onrender.com
 ```
 
-## API surface
+Frontend production URL:
+
+```text
+https://learnloop-drab.vercel.app
+```
+
+Set these Render environment variables:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+LOG_LEVEL=INFO
+
+FRONTEND_URL=https://learnloop-drab.vercel.app
+CORS_ALLOWED_ORIGINS=https://learnloop-drab.vercel.app,http://localhost:3000
+
+SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+DATABASE_URL=...
+
+LLM_PROVIDER=gemma
+LLM_ALLOWED_PROVIDERS=gemma
+GEMMA_API_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+GEMMA_API_KEY=...
+GEMMA_MODEL=gemma-4-31b-it
+GEMMA_TEMPERATURE=0.4
+GEMMA_MAX_TOKENS=1024
+GEMMA_TIMEOUT_SECONDS=60
+```
+
+Important:
+
+- `FRONTEND_URL` is now automatically added to the backend CORS allowlist in code.
+- `CORS_ALLOWED_ORIGINS` should still include both production and local development origins.
+- After changing Render env vars, redeploy the backend.
+
+## Supabase And OAuth
+
+Supabase `Authentication -> URL Configuration` should include:
+
+- `Site URL`
+
+```text
+https://learnloop-drab.vercel.app
+```
+
+- `Redirect URLs`
+
+```text
+http://localhost:3000/auth/callback
+https://learnloop-drab.vercel.app/auth/callback
+```
+
+Google OAuth provider callback must remain:
+
+```text
+https://jafvclvcipybinssrmka.supabase.co/auth/v1/callback
+```
+
+## Current API Areas
 
 - `GET /api/v1/health`
 - `GET /api/v1/auth/me`
-- `POST /api/v1/auth/profile`
-- `PATCH /api/v1/auth/profile`
-- `GET /api/v1/students/me`
-- `GET /api/v1/students/me/dashboard`
-- `GET /api/v1/students/me/events`
-- `GET /api/v1/students/me/focus`
-- `POST /api/v1/learning/chat`
-- `POST /api/v1/learning/attempt`
-- `POST /api/v1/learning/hint`
-- `POST /api/v1/learning/explain-after-effort`
-- `POST /api/v1/homework`
-- `GET /api/v1/homework`
-- `GET /api/v1/homework/{homework_id}`
-- `POST /api/v1/homework/{homework_id}/attempt`
-- `POST /api/v1/homework/{homework_id}/submit`
-- `GET /api/v1/homework/{homework_id}/analytics`
-- `POST /api/v1/progress/ask`
-- `GET /api/v1/progress/summary`
-- `GET /api/v1/progress/weak-topics`
-- `GET /api/v1/focus/today`
-- `POST /api/v1/focus/refresh`
-- `GET /api/v1/teachers/me/classes`
-- `GET /api/v1/teachers/classes/{class_id}/analytics`
-- `GET /api/v1/teachers/classes/{class_id}/weak-topics`
-- `GET /api/v1/teachers/classes/{class_id}/misconceptions`
-- `POST /api/v1/content/upload`
-- `GET /api/v1/content`
-- `POST /api/v1/content/{content_id}/process`
-- `GET /api/v1/content/{content_id}/chunks`
-- `POST /api/v1/growth/activity`
-- `GET /api/v1/growth/activities`
-- `POST /api/v1/growth/activity/{activity_id}/complete`
-- `POST /api/v1/agents/run`
-- `GET /api/v1/agents/runs/{run_id}`
-- `GET /api/v1/agents/runs/{run_id}/steps`
+- `POST /api/v1/auth/bootstrap`
+- `POST /api/v1/auth/onboarding`
+- `GET /api/v1/schools`
+- `GET /api/v1/schools/search`
+- `GET /api/v1/school-admin/overview`
+- `GET /api/v1/school-admin/approvals`
+- `POST /api/v1/school-admin/approvals/{id}/approve`
+- `POST /api/v1/school-admin/approvals/{id}/reject`
+- `GET /api/v1/school-admin/students`
+- `GET /api/v1/school-admin/teachers`
+- `GET /api/v1/school-admin/parents`
+- `GET /api/v1/school-admin/classes`
+- `POST /api/v1/school-admin/classes`
+- `GET /api/v1/school-admin/relations`
+- `POST /api/v1/school-admin/relations/teacher-students`
+- `DELETE /api/v1/school-admin/relations/teacher-students`
+- `POST /api/v1/school-admin/relations/parent-students`
+- `DELETE /api/v1/school-admin/relations/parent-students`
+- `GET /api/v1/master/overview`
+- `GET /api/v1/master/schools`
+- `POST /api/v1/master/schools`
+- `PATCH /api/v1/master/schools/{id}`
+- `GET /api/v1/master/users`
+- `GET /api/v1/master/school-admins`
+- `POST /api/v1/master/school-admins/assign`
 
-## Testing focus
+## Verification
 
-- health endpoint
-- homework attempt-first rules
-- focus scoring
-- agent loop trace creation
-- Gemma-only provider enforcement
-
+```bash
+python -m compileall app alembic
+```

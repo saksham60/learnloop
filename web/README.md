@@ -1,13 +1,6 @@
 # LearnLoop AI Web
 
-Next.js App Router frontend for LearnLoop AI, a guided-learning platform built around:
-
-- Ask
-- Think
-- Try
-- Hint
-- Reflect
-- Improve
+Next.js App Router frontend for LearnLoop AI.
 
 ## Stack
 
@@ -18,11 +11,8 @@ Next.js App Router frontend for LearnLoop AI, a guided-learning platform built a
 - shadcn-style UI primitives
 - TanStack Query
 - Supabase Auth
-- React Hook Form + Zod
-- Framer Motion
-- Recharts
 
-## Setup
+## Local Setup
 
 1. Install dependencies:
 
@@ -38,16 +28,11 @@ cp .env.local.example .env.local
 
 3. Fill the required values in `.env.local`:
 
-- `NEXT_PUBLIC_APP_URL`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_API_BASE_URL`
-
-Default backend:
-
 ```env
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=https://learnloop-wpdv.onrender.com
+NEXT_PUBLIC_SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
 4. Start the app:
@@ -56,37 +41,54 @@ NEXT_PUBLIC_API_BASE_URL=https://learnloop-wpdv.onrender.com
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+## Production Setup For Vercel
 
-## Scripts
+Current frontend domain:
 
-```bash
-npm run dev
-npm run build
-npm run lint
-npm run typecheck
+```text
+https://learnloop-drab.vercel.app
 ```
 
-## Auth flow
+Set these Vercel environment variables:
 
-- Google login uses Supabase OAuth.
-- Email login uses Supabase magic-link auth.
-- The callback route checks for an existing backend profile.
-- If no backend profile exists yet, the web app creates a `pending` profile and routes the user to `/pending`.
-- Role routing:
-  - `student` -> `/student`
-  - `teacher` -> `/teacher`
-  - `school_admin` -> `/admin`
-  - `platform_admin` -> `/admin`
-  - `parent` -> `/parent`
-  - `pending` -> `/pending`
+```env
+NEXT_PUBLIC_APP_NAME=LearnLoop AI
+NEXT_PUBLIC_APP_URL=https://learnloop-drab.vercel.app
+NEXT_PUBLIC_API_BASE_URL=https://learnloop-wpdv.onrender.com
+NEXT_PUBLIC_SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_ENABLE_GOOGLE_AUTH=true
+NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true
+NEXT_PUBLIC_ENABLE_STUDENT_APP=true
+NEXT_PUBLIC_ENABLE_TEACHER_DASHBOARD=true
+NEXT_PUBLIC_ENABLE_ADMIN_DASHBOARD=true
+NEXT_PUBLIC_ENABLE_PARENT_DASHBOARD=false
+NEXT_PUBLIC_ENABLE_SOCRATIC_MODE=true
+NEXT_PUBLIC_ENABLE_HOMEWORK=true
+NEXT_PUBLIC_ENABLE_LEARNING_COMPASS=true
+NEXT_PUBLIC_ENABLE_PROGRESS_QA=true
+NEXT_PUBLIC_ENABLE_GROWTH_MODULES=true
+NEXT_PUBLIC_ENABLE_OFFLINE_MODE=false
+```
 
-## OAuth configuration
+## Supabase Auth Configuration
 
-For your current Supabase project:
+In Supabase `Authentication -> URL Configuration`:
 
-- `NEXT_PUBLIC_SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co`
-- Google OAuth callback URL at the provider must be:
+- `Site URL`
+
+```text
+https://learnloop-drab.vercel.app
+```
+
+- `Redirect URLs`
+
+```text
+http://localhost:3000/auth/callback
+https://learnloop-drab.vercel.app/auth/callback
+```
+
+Google OAuth provider callback in Google Cloud must stay:
 
 ```text
 https://jafvclvcipybinssrmka.supabase.co/auth/v1/callback
@@ -94,42 +96,44 @@ https://jafvclvcipybinssrmka.supabase.co/auth/v1/callback
 
 Important:
 
-- That Supabase callback URL is configured in Google Cloud OAuth, not in the Next.js app.
-- The frontend app itself should still redirect users to `/auth/callback` on your own site after Supabase finishes the provider flow.
+- Google redirects to Supabase
+- Supabase redirects back to your app `/auth/callback`
 
-Recommended Supabase Auth URL settings:
+## Auth And Routing
 
-- Site URL for local:
+After sign-in:
 
-```text
-http://localhost:3000
-```
+- active `student` -> `/student`
+- active `teacher` -> `/teacher`
+- active `parent` -> `/parent`
+- active `school_admin` -> `/school-admin`
+- active `platform_admin` -> `/master`
+- `pending` role -> `/onboarding/role`
+- `pending_approval` -> `/onboarding/pending-approval`
+- `rejected` -> `/onboarding/rejected`
+- `suspended` -> `/onboarding/suspended`
 
-- Additional redirect URLs:
-
-```text
-http://localhost:3000/auth/callback
-https://your-frontend-domain.com/auth/callback
-```
-
-Recommended frontend env for local:
-
-```env
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co
-```
-
-## Route areas
+## Route Areas
 
 - Public: `/`, `/about`, `/login`
+- Onboarding: `/onboarding/role`, `/onboarding/school`, `/onboarding/pending-approval`, `/onboarding/rejected`, `/onboarding/suspended`
 - Student: `/student`, `/student/companion`, `/student/homework`, `/student/focus`, `/student/progress`, `/student/growth`
 - Teacher: `/teacher`, `/teacher/classes`, `/teacher/homework`, `/teacher/content`, `/teacher/analytics`
-- Admin: `/admin`, `/admin/users`, `/admin/classes`, `/admin/settings`
-- Placeholder: `/parent`
+- School admin: `/school-admin`, `/school-admin/approvals`, `/school-admin/students`, `/school-admin/teachers`, `/school-admin/parents`, `/school-admin/classes`, `/school-admin/relations`
+- Platform admin: `/master`, `/master/schools`, `/master/school-admins`, `/master/users`, `/master/settings`
+- Parent: `/parent`
+
+## Verification
+
+```bash
+npx next typegen
+npm run typecheck
+npm run lint
+npm run build
+```
 
 ## Notes
 
-- The UI is wired to the live backend contract at `learnloop-wpdv.onrender.com`.
-- Where the backend is still incomplete or returns `404/501`, the UI shows a friendly fallback instead of crashing.
-- Teacher content upload currently registers metadata and supports text-based processing flow; direct binary storage upload can plug in next.
-- Homework and companion UIs reinforce attempt-first learning by design.
+- The UI is wired to the live backend at `https://learnloop-wpdv.onrender.com`.
+- If a backend route returns `404` or `501`, the UI shows a graceful “being connected” state instead of crashing.
+- The onboarding and admin panels are structured for the full role-governed flow even when some backend datasets are still sparse.

@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated, Any
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -106,6 +106,15 @@ class Settings(BaseSettings):
         if not value.startswith("gemma-4"):
             raise ValueError("Only Gemma 4 models are allowed.")
         return value
+
+    @model_validator(mode="after")
+    def ensure_frontend_origin_in_cors(self) -> "Settings":
+        origins = [origin.strip() for origin in self.cors_allowed_origins if origin.strip()]
+        frontend_origin = self.frontend_url.strip().rstrip("/")
+        if frontend_origin and frontend_origin not in origins:
+            origins.append(frontend_origin)
+        self.cors_allowed_origins = origins
+        return self
 
     @property
     def database_url_sync(self) -> str:
