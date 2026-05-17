@@ -7,8 +7,8 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { bootstrapCurrentProfile } from "@/features/auth/api";
 import { type UserProfile } from "@/features/auth/types";
+import { getPostAuthDestination } from "@/features/role-gate/utils";
 import { isFeatureUnavailableError, isNetworkApiError } from "@/lib/api/errors";
-import { roleDestinations } from "@/lib/constants";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
 
@@ -58,7 +58,7 @@ function AuthCallbackPageContent() {
         const profile: UserProfile | null = await bootstrapCurrentProfile();
 
         if (!active || !profile) return;
-        router.replace(next || roleDestinations[profile.role]);
+        router.replace(next || getPostAuthDestination(profile));
       } catch (requestError) {
         if (!active) return;
         setError(

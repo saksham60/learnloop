@@ -6,6 +6,7 @@ from app.db.models.growth import GrowthActivity
 from app.db.models.homework import Homework, HomeworkQuestion, StudentAttempt
 from app.db.models.learning_event import LearningEvent
 from app.db.models.learning_session import LearningSession
+from app.db.models.relations import ParentStudentRelation, TeacherStudentRelation
 from app.db.models.school import School
 from app.db.models.subject import Subject, Topic
 from app.db.models.user import UserProfile
@@ -24,11 +25,12 @@ __all__ = [
     "HomeworkQuestion",
     "LearningEvent",
     "LearningSession",
+    "ParentStudentRelation",
     "School",
     "StudentAttempt",
     "Subject",
     "SyncEvent",
+    "TeacherStudentRelation",
     "Topic",
     "UserProfile",
 ]
-

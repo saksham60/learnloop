@@ -6,10 +6,22 @@ from enum import Enum
 class Role(str, Enum):
     STUDENT = "student"
     TEACHER = "teacher"
-    SCHOOL_ADMIN = "school_admin"
     PARENT = "parent"
+    SCHOOL_ADMIN = "school_admin"
     PLATFORM_ADMIN = "platform_admin"
     PENDING = "pending"
+
+
+class ApprovalStatus(str, Enum):
+    ACTIVE = "active"
+    PENDING_APPROVAL = "pending_approval"
+    REJECTED = "rejected"
+    SUSPENDED = "suspended"
+
+
+class SchoolStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
 
 
 class EventType(str, Enum):
@@ -91,4 +103,3 @@ class RequestType(str, Enum):
     CONTENT_PROCESS = "content_process"
     TEACHER_INSIGHT = "teacher_insight"
     GROWTH_ACTIVITY = "growth_activity"
-

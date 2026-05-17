@@ -8,7 +8,7 @@ import { teacherNav } from "@/lib/constants";
 
 export default function TeacherLayout({ children }: PropsWithChildren) {
   return (
-    <RoleGate allowedRoles={["teacher", "school_admin", "platform_admin"]}>
+    <RoleGate allowedRoles={["teacher"]}>
       <AppShell title="Teacher Workspace" navItems={teacherNav}>
         {children}
       </AppShell>

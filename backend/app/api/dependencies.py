@@ -11,7 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.core.constants import Role
+from app.core.constants import ApprovalStatus, Role
 from app.core.exceptions import AuthenticationError
 from app.core.security import JWTValidator, TokenSubject, bearer_scheme
 from app.db.session import get_db_session
@@ -23,6 +23,7 @@ class CurrentUser:
     supabase_user_id: str
     email: str | None
     role: Role | None
+    approval_status: ApprovalStatus | None
     school_id: UUID | None
 
 
@@ -78,6 +79,7 @@ async def get_authenticated_user(
         supabase_user_id=user.supabase_user_id,
         email=user.email,
         role=user.role,
+        approval_status=user.approval_status,
         school_id=user.school_id,
     )
 
@@ -108,6 +110,7 @@ async def get_optional_authenticated_user(
         supabase_user_id=user.supabase_user_id,
         email=user.email,
         role=user.role,
+        approval_status=user.approval_status,
         school_id=user.school_id,
     )
 

@@ -9,8 +9,8 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { isProfileMissingError } from "@/features/auth/api";
 import { useCurrentProfile } from "@/features/auth/hooks/useCurrentProfile";
 import type { AppRole } from "@/lib/constants";
-import { roleDestinations } from "@/lib/constants";
 import { ApiError, isFeatureUnavailableError, isNetworkApiError } from "@/lib/api/errors";
+import { evaluateRoleAccess } from "@/features/role-gate/utils";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
 
 export function RoleGate({
@@ -38,15 +38,9 @@ export function RoleGate({
       return;
     }
 
-    if (!profile) return;
-
-    if (profile.role === "pending") {
-      router.replace("/pending");
-      return;
-    }
-
-    if (!allowedRoles.includes(profile.role)) {
-      router.replace(roleDestinations[profile.role]);
+    const decision = evaluateRoleAccess(profile, allowedRoles);
+    if (decision.kind === "redirect") {
+      router.replace(decision.href);
     }
   }, [allowedRoles, isEnabled, isReady, pathname, profile, profileQuery.error, router, user]);
 
@@ -89,7 +83,7 @@ export function RoleGate({
         <div className="mx-auto max-w-5xl px-4 py-10">
           <LoadingState
             title="Setting up your profile"
-            description="Redirecting you through the LearnLoop onboarding check."
+            description="Redirecting you to LearnLoop onboarding."
           />
         </div>
       );
@@ -131,7 +125,30 @@ export function RoleGate({
     );
   }
 
-  if (!profile || profile.role === "pending" || !allowedRoles.includes(profile.role)) {
+  if (!profile) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <LoadingState
+          title="Routing your workspace"
+          description="Taking you to the right LearnLoop space."
+        />
+      </div>
+    );
+  }
+
+  const decision = evaluateRoleAccess(profile, allowedRoles);
+  if (decision.kind === "forbidden") {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <EmptyState
+          title="You do not have access to this area"
+          description="Your current LearnLoop role does not allow access to this workspace."
+        />
+      </div>
+    );
+  }
+
+  if (decision.kind !== "allow") {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
         <LoadingState

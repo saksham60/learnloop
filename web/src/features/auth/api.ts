@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api/client";
 import { ApiError, FeatureUnavailableError, isFeatureUnavailableError } from "@/lib/api/errors";
 
 import type { ProfilePayload, UserProfile } from "./types";
+import type { OnboardingPayload } from "@/features/onboarding/types";
 
 export class ProfileMissingError extends ApiError {
   constructor(message = "No LearnLoop profile exists for this account yet.", payload?: unknown) {
@@ -68,6 +69,26 @@ export async function upsertProfile(payload: ProfilePayload) {
     if (isFeatureUnavailableError(error)) {
       throw new FeatureUnavailableError(
         "Profile creation is being connected to the backend.",
+        error.status,
+        error.payload,
+      );
+    }
+    throw error;
+  }
+}
+
+export async function submitOnboarding(payload: OnboardingPayload) {
+  try {
+    const response = await apiRequest<UserProfile>("/api/v1/auth/onboarding", {
+      method: "POST",
+      body: payload,
+      treat404AsUnavailable: true,
+    });
+    return response.data;
+  } catch (error) {
+    if (isFeatureUnavailableError(error)) {
+      throw new FeatureUnavailableError(
+        "Onboarding is being connected to the backend.",
         error.status,
         error.payload,
       );

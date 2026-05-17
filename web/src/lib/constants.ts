@@ -2,6 +2,8 @@ import {
   BarChart3,
   BookOpen,
   BrainCircuit,
+  Building2,
+  ClipboardCheck,
   FileText,
   Flag,
   GraduationCap,
@@ -12,6 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  UserRoundSearch,
 } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
@@ -19,10 +22,12 @@ import type { LucideIcon } from "lucide-react";
 export type AppRole =
   | "student"
   | "teacher"
-  | "school_admin"
   | "parent"
+  | "school_admin"
   | "platform_admin"
   | "pending";
+
+export type ApprovalStatus = "active" | "pending_approval" | "rejected" | "suspended";
 
 export type NavItem = {
   title: string;
@@ -54,10 +59,17 @@ export const featureFlags = {
 export const roleDestinations: Record<AppRole, string> = {
   student: "/student",
   teacher: "/teacher",
-  school_admin: "/admin",
   parent: "/parent",
-  platform_admin: "/admin",
-  pending: "/pending",
+  school_admin: "/school-admin",
+  platform_admin: "/master",
+  pending: "/onboarding/role",
+};
+
+export const approvalDestinations: Record<ApprovalStatus, string | null> = {
+  active: null,
+  pending_approval: "/onboarding/pending-approval",
+  rejected: "/onboarding/rejected",
+  suspended: "/onboarding/suspended",
 };
 
 export const studentNav: NavItem[] = [
@@ -82,9 +94,36 @@ export const teacherNav: NavItem[] = [
   { title: "Analytics", href: "/teacher/analytics", icon: BarChart3, description: "Weak topics and trends" },
 ];
 
-export const adminNav: NavItem[] = [
-  { title: "Overview", href: "/admin", icon: ShieldCheck, description: "Platform health and roles" },
+export const schoolAdminNav: NavItem[] = [
+  { title: "Overview", href: "/school-admin", icon: Home, description: "School control center" },
+  { title: "Approvals", href: "/school-admin/approvals", icon: ClipboardCheck, description: "Review access requests" },
+  { title: "Students", href: "/school-admin/students", icon: GraduationCap, description: "Student roster and status" },
+  { title: "Teachers", href: "/school-admin/teachers", icon: Users, description: "Teacher roster and assignments" },
+  { title: "Parents", href: "/school-admin/parents", icon: UserRoundSearch, description: "Parent links and approvals" },
+  { title: "Classes", href: "/school-admin/classes", icon: Building2, description: "Class structure and ownership" },
+  { title: "Relations", href: "/school-admin/relations", icon: ShieldCheck, description: "Teacher and parent links" },
+];
+
+export const masterNav: NavItem[] = [
+  { title: "Overview", href: "/master", icon: Home, description: "Platform-level control tower" },
+  { title: "Schools", href: "/master/schools", icon: Building2, description: "Provision and manage schools" },
+  { title: "School Admins", href: "/master/school-admins", icon: ShieldCheck, description: "Assign school administrators" },
+  { title: "Users", href: "/master/users", icon: Users, description: "Cross-school user directory" },
+  { title: "Settings", href: "/master/settings", icon: Settings, description: "Platform settings and health" },
+];
+
+export const parentNav: NavItem[] = [
+  { title: "Overview", href: "/parent", icon: Home, description: "Child progress snapshot" },
+  { title: "Progress", href: "/parent#progress", icon: LineChart, description: "Child learning trend placeholder" },
+  { title: "Homework", href: "/parent#homework", icon: FileText, description: "Homework summary placeholder" },
+  { title: "Teacher Notes", href: "/parent#notes", icon: BookOpen, description: "Teacher note placeholder" },
+];
+
+export const legacyAdminNav: NavItem[] = [
+  { title: "Overview", href: "/admin", icon: ShieldCheck, description: "Legacy admin placeholder" },
   { title: "Users", href: "/admin/users", icon: Users, description: "User roles and onboarding" },
   { title: "Classes", href: "/admin/classes", icon: GraduationCap, description: "School structure" },
   { title: "Settings", href: "/admin/settings", icon: Settings, description: "Feature and org settings" },
 ];
+
+export const adminNav = legacyAdminNav;
