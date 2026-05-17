@@ -8,10 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailSignInForm } from "@/features/auth/components/EmailSignInForm";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
-import { isProfileMissingError } from "@/features/auth/api";
-import { useCurrentProfile } from "@/features/auth/hooks/useCurrentProfile";
 import { BackendHealthBadge } from "@/features/health/components/BackendHealthBadge";
-import { APP_NAME, APP_TAGLINE, featureFlags, roleDestinations } from "@/lib/constants";
+import { APP_NAME, APP_TAGLINE, featureFlags } from "@/lib/constants";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
 
 function LoginPageContent() {
@@ -19,21 +17,12 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const { isReady, user } = useSupabaseAuth();
-  const profileQuery = useCurrentProfile();
 
   useEffect(() => {
     if (!isReady) return;
     if (!user) return;
-
-    if (profileQuery.data?.role) {
-      router.replace(next || roleDestinations[profileQuery.data.role]);
-      return;
-    }
-
-    if (isProfileMissingError(profileQuery.error)) {
-      router.replace(`/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`);
-    }
-  }, [isReady, next, profileQuery.data?.role, profileQuery.error, router, user]);
+    router.replace(`/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }, [isReady, next, router, user]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-7xl items-center px-4 py-10 md:px-6 lg:px-8">
@@ -87,12 +76,6 @@ function LoginPageContent() {
                 environment to unlock sign-in.
               </div>
             )}
-            {profileQuery.error && !isProfileMissingError(profileQuery.error) ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                LearnLoop sign-in is ready, but the backend profile check is still warming up. You
-                can try again shortly.
-              </div>
-            ) : null}
             <p className="text-sm leading-6 text-muted-foreground">
               Your access role is determined after sign-in. Pending users will see an approval
               screen until their school role is confirmed.
