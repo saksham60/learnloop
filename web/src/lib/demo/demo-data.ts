@@ -2,6 +2,7 @@ import type { UserProfile } from "@/features/auth/types";
 import type { GrowthActivity } from "@/features/growth/types";
 import type { HomeworkSummary } from "@/features/homework/types";
 import type { MasterOverview, MasterSchool, MasterUser, SchoolAdminAssignment } from "@/features/master-admin/types";
+import type { ParentChildSnapshot, ParentDashboardData, ParentTeacherNote } from "@/features/parent-dashboard/types";
 import type {
   ApprovalRequest,
   ManagedClass,
@@ -673,6 +674,54 @@ const teacherMisconceptionsSeed: Record<string, ClassMisconception[]> = {
   ],
 };
 
+const parentTeacherNotesSeed: Record<
+  string,
+  { note: string; next_step: string; updated_at: string }
+> = {
+  "teacher-priya:student-aarav": {
+    note:
+      "Aarav is asking thoughtful science questions, but he still needs to explain photosynthesis in his own words instead of memorizing the sentence pattern.",
+    next_step:
+      "Ask him to explain how a plant makes food using sunlight in just two simple sentences.",
+    updated_at: now,
+  },
+  "teacher-rahul:student-aarav": {
+    note:
+      "In maths, Aarav is close on fractions but depends on hints when simplifying mixed-number answers.",
+    next_step:
+      "Have him say each fraction step aloud before he writes it. The verbal rhythm is helping.",
+    updated_at: yesterday,
+  },
+  "teacher-priya:student-meera": {
+    note:
+      "Meera understands the science vocabulary, but she should add one concrete example when she explains a concept.",
+    next_step:
+      "Prompt her with: can you give one real-life example after your explanation?",
+    updated_at: yesterday,
+  },
+  "teacher-rahul:student-meera": {
+    note:
+      "Meera is accurate in maths when she slows down. The main issue is rushing through simplification.",
+    next_step:
+      "Encourage one final self-check before she says a fractions answer is finished.",
+    updated_at: twoDaysAgo,
+  },
+  "teacher-neha:student-kabir": {
+    note:
+      "Kabir is reading confidently, but his written answers need more evidence from the passage.",
+    next_step:
+      "Ask him: which line in the passage proves your answer?",
+    updated_at: yesterday,
+  },
+  "teacher-arjun:student-anaya": {
+    note:
+      "Anaya enjoys sports coaching, and consistency is the next goal. Short daily movement is better than one long session.",
+    next_step:
+      "Keep the routine light and repeatable for the next three days.",
+    updated_at: now,
+  },
+};
+
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -844,6 +893,94 @@ export function getDemoClassWeakTopics(classId: string): ClassWeakTopic[] {
 
 export function getDemoClassMisconceptions(classId: string): ClassMisconception[] {
   return clone(teacherMisconceptionsSeed[classId] ?? []);
+}
+
+export function getDemoParentDashboard(state: DemoState, parentId: string): ParentDashboardData | null {
+  const parent = getUser(state.users, parentId);
+  if (!parent) return null;
+
+  const children = state.parent_student_relations
+    .filter((relation) => relation.parent_id === parentId)
+    .map((relation) => {
+      const student = getUser(state.users, relation.student_id);
+      if (!student) return null;
+
+      const focusAreas = getDemoStudentFocusSignals(student.id);
+      const homework = getDemoStudentHomework(student.id);
+      const activity = getDemoStudentEvents(student.id);
+      const linkedTeachers = state.teacher_student_relations
+        .filter((teacherRelation) => teacherRelation.student_id === student.id)
+        .reduce<ParentChildSnapshot["linked_teachers"]>((acc, teacherRelation) => {
+          if (acc.some((item) => item.id === teacherRelation.teacher_id)) {
+            return acc;
+          }
+
+          acc.push({
+            id: teacherRelation.teacher_id,
+            name: teacherRelation.teacher_name,
+            subject_name: teacherRelation.subject_name ?? null,
+            class_name: teacherRelation.class_name ?? null,
+          });
+          return acc;
+        }, []);
+
+      const supportTip =
+        focusAreas[0]?.description ||
+        homework[0]?.description ||
+        "Stay curious, ask what they are trying first, and let them explain their thinking aloud.";
+
+      return {
+        id: student.id,
+        full_name: student.full_name,
+        school_name: student.school_name ?? null,
+        class_name: student.class_name ?? student.grade_level ?? null,
+        relationship: relation.relationship ?? parent.parent_request?.relationship ?? null,
+        pending_homework_count: homework.length,
+        active_focus_count: focusAreas.length,
+        recent_activity_count: activity.length,
+        next_homework: homework[0] ?? null,
+        focus_areas: focusAreas,
+        linked_teachers: linkedTeachers,
+        support_tip: supportTip,
+      } satisfies ParentChildSnapshot;
+    })
+    .filter(Boolean) as ParentChildSnapshot[];
+
+  const teacherNotes = state.parent_student_relations
+    .filter((relation) => relation.parent_id === parentId)
+    .flatMap((relation) =>
+      state.teacher_student_relations
+        .filter((teacherRelation) => teacherRelation.student_id === relation.student_id)
+        .reduce<ParentTeacherNote[]>((acc, teacherRelation) => {
+          const key = `${teacherRelation.teacher_id}:${teacherRelation.student_id}`;
+          if (acc.some((note) => note.id === key)) {
+            return acc;
+          }
+
+          const seed = parentTeacherNotesSeed[key];
+          if (!seed) {
+            return acc;
+          }
+
+          acc.push({
+            id: key,
+            teacher_name: teacherRelation.teacher_name,
+            subject_name: teacherRelation.subject_name ?? null,
+            student_name: teacherRelation.student_name,
+            note: seed.note,
+            next_step: seed.next_step,
+            updated_at: seed.updated_at,
+          });
+          return acc;
+        }, []),
+    );
+
+  return {
+    children,
+    teacher_notes: teacherNotes,
+    source: "demo",
+    last_updated: now,
+  };
 }
 
 export function getDemoSchoolAdminOverview(state: DemoState, schoolId: string): SchoolAdminOverview {

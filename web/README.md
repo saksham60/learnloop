@@ -127,6 +127,7 @@ When enabled:
 - the login page shows a `Demo Access` section
 - you can jump into demo `student`, `teacher`, `parent`, `school_admin`, or `platform_admin` sessions
 - the top bar shows a `Demo Mode` badge with `Switch Demo Role` and `Exit Demo Mode`
+- demo sessions automatically attach a demo bearer token for matching backend requests
 - school admin and master admin pages use seeded demo data instead of crashing if backend endpoints are unavailable
 
 When disabled:
@@ -145,6 +146,12 @@ The local demo session helper lives in:
 
 ```text
 src/lib/demo/demo-auth.ts
+```
+
+To let protected backend APIs accept those demo sessions too, enable backend:
+
+```env
+DEMO_MODE=true
 ```
 
 ## Route Areas

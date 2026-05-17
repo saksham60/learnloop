@@ -2,6 +2,7 @@
 
 import { API_BASE_URL } from "@/lib/constants";
 import { ApiError, FeatureUnavailableError } from "@/lib/api/errors";
+import { getDemoAccessToken } from "@/lib/demo/demo-auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type ApiEnvelope<T> = {
@@ -38,6 +39,10 @@ function buildUrl(path: string, query?: ApiRequestOptions["query"]) {
 }
 
 async function getAccessToken() {
+  const demoToken = getDemoAccessToken();
+  if (demoToken) {
+    return demoToken;
+  }
   const supabase = getSupabaseBrowserClient();
   if (!supabase) return null;
   const { data } = await supabase.auth.getSession();

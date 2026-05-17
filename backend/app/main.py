@@ -7,6 +7,7 @@ from app.api.v1.router import router as api_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
+from app.db.session import AsyncSessionLocal
 
 
 def create_app() -> FastAPI:
@@ -28,8 +29,17 @@ def create_app() -> FastAPI:
     )
     register_exception_handlers(app)
     app.include_router(api_router)
+
+    @app.on_event("startup")
+    async def seed_demo_mode_data() -> None:
+        if not settings.demo_mode:
+            return
+        from app.demo.seed import ensure_demo_seeded
+
+        async with AsyncSessionLocal() as session:
+            await ensure_demo_seeded(session)
+
     return app
 
 
 app = create_app()
-

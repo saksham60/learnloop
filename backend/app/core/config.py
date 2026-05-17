@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="AI Student Companion API", alias="APP_NAME")
     app_env: str = Field(default="development", alias="APP_ENV")
     app_debug: bool = Field(default=False, alias="APP_DEBUG")
+    demo_mode: bool = Field(default=False, alias="DEMO_MODE")
     app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
     app_port: int = Field(default=8000, alias="APP_PORT")
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")

@@ -52,6 +52,7 @@ Set these Render environment variables:
 ```env
 APP_ENV=production
 APP_DEBUG=false
+DEMO_MODE=false
 LOG_LEVEL=INFO
 
 FRONTEND_URL=https://learnloop-drab.vercel.app
@@ -77,6 +78,31 @@ Important:
 - `FRONTEND_URL` is now automatically added to the backend CORS allowlist in code.
 - `CORS_ALLOWED_ORIGINS` should still include both production and local development origins.
 - After changing Render env vars, redeploy the backend.
+
+## Demo Mode
+
+Enable backend demo mode only when you intentionally want seeded demo access:
+
+```env
+DEMO_MODE=true
+```
+
+When enabled:
+
+- demo schools, users, classes, relations, homework, focus areas, growth activities, and events are seeded on startup
+- known demo bearer tokens are accepted before the normal Supabase JWT flow
+
+Example demo bearer tokens:
+
+```text
+learnloop-demo-student-aarav
+learnloop-demo-teacher-priya
+learnloop-demo-parent-rohan
+learnloop-demo-admin-green
+learnloop-demo-master-admin
+```
+
+These tokens are demo-only. Do not enable `DEMO_MODE` in a real production environment.
 
 ## Supabase And OAuth
 

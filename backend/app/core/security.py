@@ -10,6 +10,7 @@ from jwt import InvalidTokenError, PyJWKClient, PyJWKClientConnectionError, PyJW
 
 from app.core.config import Settings
 from app.core.exceptions import AuthenticationError
+from app.demo.auth import resolve_demo_token
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -154,4 +155,7 @@ class JWTValidator:
     def extract_subject(self, credentials: HTTPAuthorizationCredentials | None) -> TokenSubject:
         if credentials is None or not credentials.credentials:
             raise AuthenticationError("Missing bearer token.")
+        demo_subject = resolve_demo_token(self._settings, credentials.credentials)
+        if demo_subject is not None:
+            return demo_subject
         return self.decode_token(credentials.credentials)

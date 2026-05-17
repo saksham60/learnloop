@@ -14,6 +14,7 @@ import {
   getDemoClassMisconceptions,
   getDemoClassWeakTopics,
   getDemoMasterOverview,
+  getDemoParentDashboard,
   getDemoMasterSchools,
   getDemoMasterUsers,
   getDemoSchoolAdminAssignments,
@@ -42,6 +43,13 @@ import {
 const DEMO_SESSION_KEY = "learnloop-demo-session";
 const DEMO_STATE_KEY = "learnloop-demo-state-v1";
 const DEMO_EVENT = "learnloop:demo-changed";
+const DEMO_ACCESS_TOKENS: Record<string, string> = {
+  "student-aarav": "learnloop-demo-student-aarav",
+  "teacher-priya": "learnloop-demo-teacher-priya",
+  "parent-rohan": "learnloop-demo-parent-rohan",
+  "admin-green": "learnloop-demo-admin-green",
+  "master-admin": "learnloop-demo-master-admin",
+};
 
 type DemoSession = {
   userId: string;
@@ -136,6 +144,13 @@ export function clearDemoProfile() {
   writeDemoSession(null);
 }
 
+export function getDemoAccessToken() {
+  if (!isDemoModeEnabled()) return null;
+  const session = getDemoSession();
+  if (!session?.userId) return null;
+  return DEMO_ACCESS_TOKENS[session.userId] ?? null;
+}
+
 export function useDemoProfile() {
   const [profile, setProfile] = useState(() => getDemoProfile());
 
@@ -209,6 +224,11 @@ export function getDemoTeacherWeakTopics(classId: string) {
 
 export function getDemoTeacherMisconceptions(classId: string) {
   return getDemoClassMisconceptions(classId);
+}
+
+export function getDemoParentDashboardData() {
+  const profile = getDemoProfile();
+  return profile ? getDemoParentDashboard(getDemoState(), profile.id) : null;
 }
 
 export function getDemoSchoolAdminData() {
