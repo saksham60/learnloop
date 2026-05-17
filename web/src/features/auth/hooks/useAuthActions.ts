@@ -20,9 +20,10 @@ export function useAuthActions() {
   }
 
   function buildRedirectUrl(nextPath?: string) {
-    const appOrigin =
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || getBrowserOrigin();
-    const redirectUrl = new URL("/auth/callback", appOrigin);
+    // Always use the current browser origin for OAuth callbacks.
+    // This avoids PKCE verifier mismatches when the app is opened on a Vercel preview
+    // or a different deployed hostname than NEXT_PUBLIC_APP_URL.
+    const redirectUrl = new URL("/auth/callback", getBrowserOrigin());
     if (nextPath) {
       redirectUrl.searchParams.set("next", nextPath);
     }
