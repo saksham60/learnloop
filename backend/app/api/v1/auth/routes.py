@@ -88,8 +88,8 @@ async def submit_onboarding(
             role=payload.role,
             school_id=payload.school_id,
             approval_status=payload.approval_status,
-            grade_level=payload.grade_level,
-            parent_request=payload.parent_request.model_dump() if payload.parent_request else None,
+            class_grade=payload.class_grade,
+            section=payload.section,
         ),
     )
     return APIResponse(data=data, message="onboarding updated")

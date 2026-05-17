@@ -1,44 +1,49 @@
 "use client";
 
-import { GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { Building2, GraduationCap, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { PublicOnboardingRole } from "@/features/onboarding/types";
+import type { PublicRegistrationChoice } from "@/features/onboarding/types";
 
 const options: Array<{
-  role: PublicOnboardingRole;
+  role: PublicRegistrationChoice;
   title: string;
   copy: string;
   badge: string;
   cta: string;
   icon: typeof GraduationCap;
+  href: string;
 }> = [
   {
     role: "student",
     title: "Student",
-    copy: "I want to learn, practice, complete homework, and track my progress.",
+    copy:
+      "I want to learn, complete homework, track my progress, and use LearnLoop as my learning companion.",
     badge: "No approval required",
     cta: "Continue as Student",
     icon: GraduationCap,
-  },
-  {
-    role: "teacher",
-    title: "Teacher",
-    copy: "I want to assign homework, review attempts, and guide students.",
-    badge: "School approval required",
-    cta: "Continue as Teacher",
-    icon: ShieldCheck,
+    href: "/onboarding/school?role=student",
   },
   {
     role: "parent",
     title: "Parent",
-    copy: "I want to follow my child's learning progress.",
-    badge: "School approval required",
+    copy: "I want to follow my child's learning progress and request access through the school.",
+    badge: "Child access requires school approval",
     cta: "Continue as Parent",
     icon: Users,
+    href: "/onboarding/school?role=parent",
+  },
+  {
+    role: "school",
+    title: "School",
+    copy: "I represent a school and want to set up LearnLoop for students, parents, and teachers.",
+    badge: "School setup required",
+    cta: "Register School",
+    icon: Building2,
+    href: "/onboarding/school-registration",
   },
 ];
 
@@ -64,10 +69,7 @@ export function RoleSelectionCards() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button
-                className="w-full"
-                onClick={() => router.push(`/onboarding/school?role=${option.role}`)}
-              >
+              <Button className="w-full" onClick={() => router.push(option.href)}>
                 {option.cta}
               </Button>
             </CardContent>

@@ -1,6 +1,7 @@
 import type { ApprovalStatus } from "@/lib/constants";
 
-export type PublicOnboardingRole = "student" | "teacher" | "parent";
+export type PublicOnboardingRole = "student" | "parent";
+export type PublicRegistrationChoice = PublicOnboardingRole | "school";
 
 export type ParentRequest = {
   child_name?: string | null;
@@ -13,6 +14,6 @@ export type OnboardingPayload = {
   role: PublicOnboardingRole;
   school_id: string;
   approval_status: ApprovalStatus;
-  grade_level?: string | null;
-  parent_request?: ParentRequest | null;
+  class_grade?: string | null;
+  section?: string | null;
 };

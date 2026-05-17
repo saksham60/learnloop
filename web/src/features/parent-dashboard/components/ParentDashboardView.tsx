@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { BookOpenCheck, Flag, HeartHandshake, MessageSquareQuote, Users } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -10,12 +11,20 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useChildAccessRequests } from "@/features/parent-access/hooks/useChildAccessRequests";
 import { useParentDashboard } from "@/features/parent-dashboard/hooks/useParentDashboard";
 import { isFeatureUnavailableError } from "@/lib/api/errors";
 import { formatRelativeTime } from "@/lib/utils";
 
 export function ParentDashboardView() {
+  const router = useRouter();
   const dashboardQuery = useParentDashboard();
+  const requestsQuery = useChildAccessRequests();
+
+  const latestRequest = useMemo(() => {
+    const requests = requestsQuery.data ?? [];
+    return [...requests].sort((left, right) => right.created_at.localeCompare(left.created_at))[0] ?? null;
+  }, [requestsQuery.data]);
 
   const totals = useMemo(() => {
     const data = dashboardQuery.data;
@@ -40,7 +49,7 @@ export function ParentDashboardView() {
     };
   }, [dashboardQuery.data]);
 
-  if (dashboardQuery.isLoading) {
+  if (dashboardQuery.isLoading && requestsQuery.isLoading) {
     return (
       <LoadingState
         title="Loading parent dashboard"
@@ -49,23 +58,33 @@ export function ParentDashboardView() {
     );
   }
 
-  if (dashboardQuery.error) {
-    if (isFeatureUnavailableError(dashboardQuery.error)) {
+  if (requestsQuery.error) {
+    if (isFeatureUnavailableError(requestsQuery.error)) {
       return (
         <div className="space-y-6">
           <PageHeader
             eyebrow="Parent"
             title="Follow your child's learning journey"
-            description="This school-approved parent view will show linked children, homework summaries, and teacher notes once the backend parent APIs are ready."
+            description="This school-approved parent view will show linked children, request status, homework summaries, and teacher notes."
           />
           <EmptyState
             title="Parent dashboard is being connected"
-            description="Once a student is linked and parent APIs are live, this area will show a calm, school-safe summary instead of raw student data."
+            description="Once the parent request endpoints are live, this area will show request status and linked child summaries."
           />
         </div>
       );
     }
 
+    return (
+      <ErrorState
+        title="We could not load parent access status"
+        description="Try again. If the issue persists, the parent request service may still be warming up."
+        onRetry={() => void requestsQuery.refetch()}
+      />
+    );
+  }
+
+  if (dashboardQuery.error && !isFeatureUnavailableError(dashboardQuery.error)) {
     return (
       <ErrorState
         title="We could not load the parent dashboard"
@@ -334,10 +353,79 @@ export function ParentDashboardView() {
           </div>
         </div>
       ) : (
-        <EmptyState
-          title="No child is linked yet"
-          description="Once a school admin links this parent account to a student, progress, homework summaries, and teacher notes will appear here."
-        />
+        <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle>
+                    {latestRequest
+                      ? "Child access status"
+                      : "No child is linked yet"}
+                  </CardTitle>
+                  <CardDescription>
+                    {latestRequest
+                      ? `Most recent request submitted ${formatRelativeTime(latestRequest.created_at)}`
+                      : "Submit a child request so the school can review and approve the link."}
+                  </CardDescription>
+                </div>
+                {latestRequest ? <Badge variant="outline">{latestRequest.status}</Badge> : null}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {latestRequest ? (
+                <>
+                  <div className="rounded-[1.5rem] border border-border bg-background/80 p-4">
+                    <p className="font-medium text-foreground">{latestRequest.child_name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {[latestRequest.child_class, latestRequest.child_section].filter(Boolean).join(" | ") || "Class pending"}
+                    </p>
+                    <p className="mt-3 text-sm text-muted-foreground capitalize">
+                      Relationship: {latestRequest.relationship}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.5rem] border border-border bg-background/80 p-4">
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {latestRequest.status === "pending_approval"
+                        ? "Parent account is active, but child access is still waiting for school approval."
+                        : latestRequest.status === "approved"
+                          ? "The school approved this request. Child summary will appear here as linked data comes online."
+                          : latestRequest.rejection_reason || "This request was not approved. You can submit another request with corrected details."}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <EmptyState
+                  title="Request child access"
+                  description="Parent account is active, but no child is linked yet. Start with your child's school details."
+                  actionLabel="Request Child Access"
+                  onAction={() => router.push("/parent/child-requests")}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>What happens next</CardTitle>
+              <CardDescription>LearnLoop keeps the parent experience active while student access stays school-approved.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-background/80 p-4">
+                <p className="font-medium text-foreground">1. Parent account is active</p>
+                <p className="mt-1">You can access the parent workspace right after selecting the school.</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-background/80 p-4">
+                <p className="font-medium text-foreground">2. School verifies the child link</p>
+                <p className="mt-1">The school reviews the request before any student progress is exposed to a parent.</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-background/80 p-4">
+                <p className="font-medium text-foreground">3. Linked child summary appears here</p>
+                <p className="mt-1">Once approved, the dashboard shows a calm snapshot of homework, focus areas, and teacher notes.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

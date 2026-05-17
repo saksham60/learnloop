@@ -31,8 +31,8 @@ class OnboardingCommand:
     role: Role
     school_id: UUID
     approval_status: ApprovalStatus
-    grade_level: str | None = None
-    parent_request: dict[str, Any] | None = None
+    class_grade: str | None = None
+    section: str | None = None
 
 
 class AuthService:
@@ -120,8 +120,8 @@ class AuthService:
         return self._serialize_profile(profile)
 
     async def onboard_profile(self, subject: TokenSubject, command: OnboardingCommand) -> dict:
-        if command.role not in {Role.STUDENT, Role.TEACHER, Role.PARENT}:
-            raise RuleViolationError("Only student, teacher, and parent roles are allowed in public onboarding.")
+        if command.role not in {Role.STUDENT, Role.PARENT}:
+            raise RuleViolationError("Only student and parent roles are allowed in public onboarding.")
 
         school = await self._schools.get_by_id(command.school_id)
         if school is None:
@@ -130,8 +130,8 @@ class AuthService:
         if command.role == Role.STUDENT and command.approval_status != ApprovalStatus.ACTIVE:
             raise RuleViolationError("Students should be activated immediately after selecting a school.")
 
-        if command.role in {Role.TEACHER, Role.PARENT} and command.approval_status != ApprovalStatus.PENDING_APPROVAL:
-            raise RuleViolationError("Teacher and parent onboarding requests must wait for school approval.")
+        if command.role == Role.PARENT and command.approval_status != ApprovalStatus.ACTIVE:
+            raise RuleViolationError("Parent accounts should be activated immediately after selecting a school.")
 
         existing_profile = await self._users.get_by_supabase_user_id(subject.subject)
         base_name = (
@@ -144,8 +144,10 @@ class AuthService:
         avatar_url = (existing_profile.avatar_url if existing_profile is not None else None) or subject.avatar_url
 
         metadata: dict[str, Any] = {}
-        if command.parent_request:
-            metadata["parent_request"] = command.parent_request
+        if existing_profile is not None and existing_profile.approval_metadata:
+            metadata.update(existing_profile.approval_metadata)
+        if command.section:
+            metadata["student_registration"] = {"section": command.section}
 
         profile = await self._users.upsert_profile(
             supabase_user_id=subject.subject,
@@ -154,7 +156,7 @@ class AuthService:
             role=command.role,
             approval_status=command.approval_status,
             school_id=command.school_id,
-            grade_level=command.grade_level,
+            grade_level=command.class_grade,
             avatar_url=avatar_url,
             approval_reason=None,
             approval_metadata=metadata,

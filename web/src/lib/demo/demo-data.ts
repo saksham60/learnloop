@@ -2,6 +2,7 @@ import type { UserProfile } from "@/features/auth/types";
 import type { GrowthActivity } from "@/features/growth/types";
 import type { HomeworkSummary } from "@/features/homework/types";
 import type { MasterOverview, MasterSchool, MasterUser, SchoolAdminAssignment } from "@/features/master-admin/types";
+import type { ChildAccessRequest, CreateChildAccessRequestPayload } from "@/features/parent-access/types";
 import type { ParentChildSnapshot, ParentDashboardData, ParentTeacherNote } from "@/features/parent-dashboard/types";
 import type {
   ApprovalRequest,
@@ -62,6 +63,7 @@ export type DemoState = {
   users: DemoUser[];
   classes: DemoClass[];
   approvals: DemoApprovalRequest[];
+  child_access_requests: ChildAccessRequest[];
   teacher_student_relations: DemoTeacherStudentRelation[];
   parent_student_relations: DemoParentStudentRelation[];
 };
@@ -488,6 +490,26 @@ const approvalsSeed: DemoApprovalRequest[] = [
   },
 ];
 
+const childAccessRequestsSeed: ChildAccessRequest[] = [
+  {
+    id: "child-request-rohan-aarav",
+    parent_id: "parent-rohan",
+    parent_name: "Rohan Sharma",
+    parent_email: "rohan.parent.demo@learnloop.ai",
+    school_id: "school-green-valley",
+    school_name: "Green Valley Public School",
+    child_name: "Aarav Sharma",
+    child_email: "aarav.student.demo@learnloop.ai",
+    child_class: "Class 7A",
+    child_section: "A",
+    relationship: "father",
+    message: "Requesting access to Aarav's progress for home support.",
+    status: "pending_approval",
+    rejection_reason: null,
+    created_at: now,
+  },
+];
+
 const teacherStudentRelationsSeed: DemoTeacherStudentRelation[] = [
   {
     teacher_id: "teacher-priya",
@@ -552,13 +574,6 @@ const teacherStudentRelationsSeed: DemoTeacherStudentRelation[] = [
 ];
 
 const parentStudentRelationsSeed: DemoParentStudentRelation[] = [
-  {
-    parent_id: "parent-rohan",
-    parent_name: "Rohan Sharma",
-    student_id: "student-aarav",
-    student_name: "Aarav Sharma",
-    relationship: "father",
-  },
   {
     parent_id: "parent-kavita",
     parent_name: "Kavita Singh",
@@ -791,6 +806,7 @@ export function createDemoSeedState(): DemoState {
     users: clone(usersSeed),
     classes: clone(classesSeed),
     approvals: clone(approvalsSeed),
+    child_access_requests: clone(childAccessRequestsSeed),
     teacher_student_relations: clone(teacherStudentRelationsSeed),
     parent_student_relations: clone(parentStudentRelationsSeed),
   };
@@ -798,6 +814,7 @@ export function createDemoSeedState(): DemoState {
 
 export const demoRoleDefaults: Record<Exclude<AppRole, "pending">, string> = {
   student: "student-aarav",
+  school: "admin-green",
   teacher: "teacher-priya",
   parent: "parent-rohan",
   school_admin: "admin-green",
@@ -983,6 +1000,22 @@ export function getDemoParentDashboard(state: DemoState, parentId: string): Pare
   };
 }
 
+export function getDemoParentChildRequests(state: DemoState, parentId: string): ChildAccessRequest[] {
+  return clone(
+    state.child_access_requests
+      .filter((request) => request.parent_id === parentId)
+      .sort((left, right) => right.created_at.localeCompare(left.created_at)),
+  );
+}
+
+export function getDemoSchoolChildRequests(state: DemoState, schoolId: string): ChildAccessRequest[] {
+  return clone(
+    state.child_access_requests
+      .filter((request) => request.school_id === schoolId)
+      .sort((left, right) => right.created_at.localeCompare(left.created_at)),
+  );
+}
+
 export function getDemoSchoolAdminOverview(state: DemoState, schoolId: string): SchoolAdminOverview {
   const users = state.users.filter((user) => user.school_id === schoolId);
   return {
@@ -1131,6 +1164,117 @@ export function rejectDemoRequest(state: DemoState, requestId: string, reason?: 
       user.id === request.user_id
         ? { ...user, approval_status: "rejected", approval_reason: reason || "Demo rejection recorded." }
         : user,
+    ),
+  };
+}
+
+export function createDemoParentChildRequest(
+  state: DemoState,
+  parentId: string,
+  payload: CreateChildAccessRequestPayload,
+): DemoState {
+  const parent = getUser(state.users, parentId);
+  if (!parent) return state;
+
+  const schoolName = getSchoolName(state.schools, payload.school_id);
+  const request: ChildAccessRequest = {
+    id: createId("child-request"),
+    parent_id: parentId,
+    parent_name: parent.full_name,
+    parent_email: parent.email,
+    school_id: payload.school_id,
+    school_name: schoolName,
+    child_name: payload.child_name,
+    child_email: payload.child_email ?? null,
+    child_class: payload.child_class ?? null,
+    child_section: payload.child_section ?? null,
+    relationship: payload.relationship,
+    message: payload.message ?? null,
+    status: "pending_approval",
+    rejection_reason: null,
+    created_at: now,
+  };
+
+  return {
+    ...state,
+    child_access_requests: [request, ...state.child_access_requests],
+    users: state.users.map((user) =>
+      user.id === parentId
+        ? {
+            ...user,
+            school_id: payload.school_id,
+            school_name: schoolName,
+            parent_request: {
+              child_name: payload.child_name,
+              child_email: payload.child_email ?? null,
+              child_class: payload.child_class ?? null,
+              relationship: payload.relationship,
+            },
+          }
+        : user,
+    ),
+  };
+}
+
+export function approveDemoChildAccessRequest(
+  state: DemoState,
+  requestId: string,
+  studentId?: string | null,
+): DemoState {
+  const request = state.child_access_requests.find((item) => item.id === requestId);
+  if (!request) return state;
+
+  const resolvedStudent =
+    (studentId ? getUser(state.users, studentId) : null) ??
+    state.users.find(
+      (user) =>
+        user.role === "student" &&
+        user.school_id === request.school_id &&
+        user.full_name.toLowerCase() === request.child_name.toLowerCase(),
+    ) ??
+    null;
+
+  const nextRelations = resolvedStudent && !state.parent_student_relations.some(
+    (relation) => relation.parent_id === request.parent_id && relation.student_id === resolvedStudent.id,
+  )
+    ? [
+        ...state.parent_student_relations,
+        {
+          parent_id: request.parent_id,
+          parent_name: request.parent_name ?? "Parent",
+          student_id: resolvedStudent.id,
+          student_name: resolvedStudent.full_name,
+          relationship: request.relationship,
+        },
+      ]
+    : state.parent_student_relations;
+
+  return {
+    ...state,
+    child_access_requests: state.child_access_requests.map((item) =>
+      item.id === requestId
+        ? { ...item, status: "approved", rejection_reason: null }
+        : item,
+    ),
+    parent_student_relations: nextRelations,
+  };
+}
+
+export function rejectDemoChildAccessRequest(
+  state: DemoState,
+  requestId: string,
+  reason?: string | null,
+): DemoState {
+  return {
+    ...state,
+    child_access_requests: state.child_access_requests.map((item) =>
+      item.id === requestId
+        ? {
+            ...item,
+            status: "rejected",
+            rejection_reason: reason || "Please verify the student details with the school office.",
+          }
+        : item,
     ),
   };
 }

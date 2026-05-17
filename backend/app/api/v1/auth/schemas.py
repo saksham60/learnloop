@@ -29,8 +29,8 @@ class OnboardingPayload(BaseModel):
     role: Role
     school_id: UUID
     approval_status: ApprovalStatus
-    grade_level: str | None = None
-    parent_request: ParentRequestPayload | None = None
+    class_grade: str | None = None
+    section: str | None = None
 
 
 class ProfileResponse(BaseModel):

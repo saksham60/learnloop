@@ -1,7 +1,7 @@
 import { apiRequest } from "@/lib/api/client";
 import { getDemoSchoolsList, isDemoModeEnabled } from "@/lib/demo/demo-auth";
 
-import type { School } from "@/features/schools/types";
+import type { School, SchoolRegistrationRequest } from "@/features/schools/types";
 
 export async function listSchools(search?: string) {
   if (isDemoModeEnabled()) {
@@ -23,4 +23,13 @@ export async function searchSchools(query: string) {
     treat404AsUnavailable: true,
   });
   return response.data ?? [];
+}
+
+export async function registerSchool(payload: SchoolRegistrationRequest) {
+  const response = await apiRequest<SchoolRegistrationRequest>("/api/v1/schools/register", {
+    method: "POST",
+    body: payload,
+    treat404AsUnavailable: true,
+  });
+  return response.data;
 }

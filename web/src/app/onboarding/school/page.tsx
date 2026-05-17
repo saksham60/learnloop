@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { SchoolSelectionForm } from "@/features/onboarding/components/SchoolSelectionForm";
 import type { PublicOnboardingRole } from "@/features/onboarding/types";
 
-const allowedRoles: PublicOnboardingRole[] = ["student", "teacher", "parent"];
+const allowedRoles: PublicOnboardingRole[] = ["student", "parent"];
 
 function resolveRole(value: string | string[] | undefined): PublicOnboardingRole | null {
   const role = Array.isArray(value) ? value[0] : value;

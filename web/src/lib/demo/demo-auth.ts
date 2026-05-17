@@ -5,7 +5,9 @@ import {
   addDemoParentStudents,
   addDemoTeacherStudents,
   approveDemoRequest,
+  approveDemoChildAccessRequest as approveDemoChildAccessRequestState,
   assignDemoSchoolAdmin,
+  createDemoParentChildRequest as createDemoParentChildRequestState,
   createDemoClass,
   createDemoSchool,
   createDemoSeedState,
@@ -15,11 +17,13 @@ import {
   getDemoClassWeakTopics,
   getDemoMasterOverview,
   getDemoParentDashboard,
+  getDemoParentChildRequests as getDemoParentChildRequestsState,
   getDemoMasterSchools,
   getDemoMasterUsers,
   getDemoSchoolAdminAssignments,
   getDemoSchoolAdminOverview,
   getDemoSchoolApprovals,
+  getDemoSchoolChildRequests as getDemoSchoolChildRequestsState,
   getDemoSchoolClasses,
   getDemoSchoolParents,
   getDemoSchoolRelations,
@@ -33,12 +37,14 @@ import {
   getDemoTeacherClasses,
   getDemoUserProfile,
   rejectDemoRequest,
+  rejectDemoChildAccessRequest as rejectDemoChildAccessRequestState,
   removeDemoParentStudents,
   removeDemoTeacherStudents,
   searchDemoSchools,
   type DemoState,
   updateDemoSchool,
 } from "@/lib/demo/demo-data";
+import type { CreateChildAccessRequestPayload } from "@/features/parent-access/types";
 
 const DEMO_SESSION_KEY = "learnloop-demo-session";
 const DEMO_STATE_KEY = "learnloop-demo-state-v1";
@@ -172,8 +178,9 @@ export function useDemoProfile() {
 export function getDemoRoleDestinations() {
   return {
     student: "/student",
+    school: "/school",
     teacher: "/teacher",
-    school_admin: "/school-admin",
+    school_admin: "/school",
     platform_admin: "/master",
     parent: "/parent",
   } as const;
@@ -231,6 +238,23 @@ export function getDemoParentDashboardData() {
   return profile ? getDemoParentDashboard(getDemoState(), profile.id) : null;
 }
 
+export function getDemoParentChildRequests() {
+  const profile = getDemoProfile();
+  return profile ? getDemoParentChildRequestsState(getDemoState(), profile.id) : [];
+}
+
+export function createDemoChildAccessRequest(payload: CreateChildAccessRequestPayload) {
+  const profile = getDemoProfile();
+  if (!profile) return null;
+  let created = null;
+  updateDemoState((state) => {
+    const next = createDemoParentChildRequestState(state, profile.id, payload);
+    created = next.child_access_requests[0] ?? null;
+    return next;
+  });
+  return created;
+}
+
 export function getDemoSchoolAdminData() {
   const profile = getDemoProfile();
   const state = getDemoState();
@@ -247,12 +271,38 @@ export function getDemoSchoolAdminData() {
   };
 }
 
+export function getDemoSchoolChildRequests() {
+  const profile = getDemoProfile();
+  const schoolId = profile?.school_id;
+  return schoolId ? getDemoSchoolChildRequestsState(getDemoState(), schoolId) : [];
+}
+
 export function approveDemoApproval(requestId: string, role: "teacher" | "parent") {
   updateDemoState((state) => approveDemoRequest(state, requestId, role));
 }
 
 export function rejectDemoApproval(requestId: string, reason?: string) {
   updateDemoState((state) => rejectDemoRequest(state, requestId, reason));
+}
+
+export function approveDemoChildAccessRequest(requestId: string, studentId?: string | null) {
+  let updated = null;
+  updateDemoState((state) => {
+    const next = approveDemoChildAccessRequestState(state, requestId, studentId);
+    updated = next.child_access_requests.find((item) => item.id === requestId) ?? null;
+    return next;
+  });
+  return updated;
+}
+
+export function rejectDemoChildAccessRequest(requestId: string, reason?: string | null) {
+  let updated = null;
+  updateDemoState((state) => {
+    const next = rejectDemoChildAccessRequestState(state, requestId, reason);
+    updated = next.child_access_requests.find((item) => item.id === requestId) ?? null;
+    return next;
+  });
+  return updated;
 }
 
 export function assignDemoTeacherRelation(payload: {

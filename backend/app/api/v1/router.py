@@ -11,7 +11,9 @@ from app.api.v1.health.routes import router as health_router
 from app.api.v1.homework.routes import router as homework_router
 from app.api.v1.learning.routes import router as learning_router
 from app.api.v1.master.routes import router as master_router
+from app.api.v1.parent.routes import router as parent_router
 from app.api.v1.progress.routes import router as progress_router
+from app.api.v1.school.routes import router as school_router
 from app.api.v1.school_admin.routes import router as school_admin_router
 from app.api.v1.schools.routes import router as schools_router
 from app.api.v1.students.routes import router as students_router
@@ -25,8 +27,10 @@ router.include_router(students_router)
 router.include_router(learning_router)
 router.include_router(homework_router)
 router.include_router(progress_router)
+router.include_router(parent_router)
 router.include_router(focus_router)
 router.include_router(teachers_router)
+router.include_router(school_router)
 router.include_router(school_admin_router)
 router.include_router(master_router)
 router.include_router(content_router)

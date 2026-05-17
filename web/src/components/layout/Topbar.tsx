@@ -62,10 +62,10 @@ export function Topbar({
               className="h-9 rounded-xl border border-input bg-white px-3 text-sm"
             >
               <option value="student">Demo Student</option>
-              <option value="teacher">Demo Teacher</option>
-              <option value="school_admin">Demo School Admin</option>
-              <option value="platform_admin">Demo Master Admin</option>
               <option value="parent">Demo Parent</option>
+              <option value="school_admin">Demo School</option>
+              <option value="teacher">Demo Teacher</option>
+              <option value="platform_admin">Demo Master Admin</option>
             </select>
             <Button type="button" variant="secondary" size="sm" onClick={handleSwitchDemoRole}>
               Switch Demo Role

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -10,34 +10,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useSubmitOnboarding } from "@/features/onboarding/hooks/useOnboarding";
 import type { PublicOnboardingRole } from "@/features/onboarding/types";
 import { useSchools } from "@/features/schools/hooks/useSchools";
 import { isFeatureUnavailableError } from "@/lib/api/errors";
-import { getPostAuthDestination } from "@/features/role-gate/utils";
 
 const roleCopy: Record<
   PublicOnboardingRole,
-  { title: string; button: string; description: string; approvalStatus: "active" | "pending_approval" }
+  { title: string; button: string; description: string; approvalStatus: "active" }
 > = {
   student: {
     title: "Join as a student",
     button: "Join School",
-    description: "Students get immediate access after picking the right school.",
+    description: "Student access is activated after school selection.",
     approvalStatus: "active",
   },
-  teacher: {
-    title: "Request teacher access",
-    button: "Request Teacher Access",
-    description: "Your request will be reviewed by the school admin before LearnLoop opens the teacher workspace.",
-    approvalStatus: "pending_approval",
-  },
   parent: {
-    title: "Request parent access",
-    button: "Request Parent Access",
-    description: "Share a few child details so the school admin can verify and link the right student.",
-    approvalStatus: "pending_approval",
+    title: "Continue as a parent",
+    button: "Continue to Parent Portal",
+    description: "Parent account is active, but child access requires school approval.",
+    approvalStatus: "active",
   },
 };
 
@@ -45,18 +37,11 @@ export function SchoolSelectionForm({ role }: { role: PublicOnboardingRole }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [childName, setChildName] = useState("");
-  const [childEmail, setChildEmail] = useState("");
-  const [childClass, setChildClass] = useState("");
-  const [relationship, setRelationship] = useState("guardian");
+  const [classGrade, setClassGrade] = useState("");
+  const [section, setSection] = useState("");
 
   const schoolsQuery = useSchools(search);
   const onboardingMutation = useSubmitOnboarding();
-  const selectedSchool = useMemo(
-    () => schoolsQuery.data?.find((school) => school.id === selectedSchoolId) ?? null,
-    [schoolsQuery.data, selectedSchoolId],
-  );
 
   async function handleSubmit() {
     if (!selectedSchoolId) {
@@ -69,20 +54,12 @@ export function SchoolSelectionForm({ role }: { role: PublicOnboardingRole }) {
         role,
         school_id: selectedSchoolId,
         approval_status: roleCopy[role].approvalStatus,
-        grade_level: role === "student" ? gradeLevel || null : null,
-        parent_request:
-          role === "parent"
-            ? {
-                child_name: childName || null,
-                child_email: childEmail || null,
-                child_class: childClass || null,
-                relationship: relationship || null,
-              }
-            : null,
+        class_grade: role === "student" ? classGrade || null : null,
+        section: role === "student" ? section || null : null,
       });
 
       if (!profile) return;
-      router.replace(getPostAuthDestination(profile));
+      router.replace(role === "parent" ? "/parent/child-requests" : "/student");
     } catch (error) {
       if (isFeatureUnavailableError(error)) {
         toast.error("Onboarding is still being connected to the backend.");
@@ -157,67 +134,23 @@ export function SchoolSelectionForm({ role }: { role: PublicOnboardingRole }) {
         </div>
 
         {role === "student" ? (
-          <div className="space-y-2">
-            <Label htmlFor="grade-level">Class or grade</Label>
-            <Input
-              id="grade-level"
-              value={gradeLevel}
-              onChange={(event) => setGradeLevel(event.target.value)}
-              placeholder="7A or Grade 7"
-            />
-          </div>
-        ) : null}
-
-        {role === "parent" ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="child-name">Child name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="class-grade">Class or grade</Label>
               <Input
-                id="child-name"
-                value={childName}
-                onChange={(event) => setChildName(event.target.value)}
-                placeholder="Student name"
+                id="class-grade"
+                value={classGrade}
+                onChange={(event) => setClassGrade(event.target.value)}
+                placeholder="Grade 7 or 7A"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="child-email">Child email</Label>
+              <Label htmlFor="section">Section</Label>
               <Input
-                id="child-email"
-                value={childEmail}
-                onChange={(event) => setChildEmail(event.target.value)}
-                placeholder="Optional student email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="child-class">Child class or grade</Label>
-              <Input
-                id="child-class"
-                value={childClass}
-                onChange={(event) => setChildClass(event.target.value)}
-                placeholder="Optional class"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="relationship">Relationship</Label>
-              <select
-                id="relationship"
-                value={relationship}
-                onChange={(event) => setRelationship(event.target.value)}
-                className="flex h-11 w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm"
-              >
-                <option value="father">Father</option>
-                <option value="mother">Mother</option>
-                <option value="guardian">Guardian</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="parent-note">Context</Label>
-              <Textarea
-                id="parent-note"
-                value={selectedSchool ? `${selectedSchool.name} selected for parent access request.` : ""}
-                readOnly
-                className="min-h-[96px]"
+                id="section"
+                value={section}
+                onChange={(event) => setSection(event.target.value)}
+                placeholder="A"
               />
             </div>
           </div>

@@ -44,7 +44,7 @@ function LoginPageContent() {
             The cleanest way to enter a guided learning workspace.
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground">
-            Sign in with Google or email to access a student, teacher, or school dashboard
+            Sign in with Google or email to access a student, parent, or school dashboard
             designed around thinking before telling.
           </p>
         </div>
@@ -102,19 +102,26 @@ function LoginPageContent() {
                   <Button type="button" variant="secondary" onClick={() => handleDemoAccess("student")}>
                     Continue as Demo Student
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("teacher")}>
-                    Continue as Demo Teacher
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("school_admin")}>
-                    Continue as Demo School Admin
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("platform_admin")}>
-                    Continue as Demo Master Admin
-                  </Button>
-                  <Button type="button" variant="secondary" className="sm:col-span-2" onClick={() => handleDemoAccess("parent")}>
+                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("parent")}>
                     Continue as Demo Parent
                   </Button>
+                  <Button type="button" variant="secondary" className="sm:col-span-2" onClick={() => handleDemoAccess("school_admin")}>
+                    Continue as Demo School
+                  </Button>
                 </div>
+                <details className="mt-4 rounded-2xl border border-primary/10 bg-white/70 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                    Internal demo roles
+                  </summary>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <Button type="button" variant="secondary" onClick={() => handleDemoAccess("teacher")}>
+                      Continue as Demo Teacher
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => handleDemoAccess("platform_admin")}>
+                      Continue as Demo Master Admin
+                    </Button>
+                  </div>
+                </details>
               </div>
             ) : null}
             <p className="text-sm text-muted-foreground">

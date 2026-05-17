@@ -23,6 +23,7 @@ export type AppRole =
   | "student"
   | "teacher"
   | "parent"
+  | "school"
   | "school_admin"
   | "platform_admin"
   | "pending";
@@ -61,7 +62,8 @@ export const roleDestinations: Record<AppRole, string> = {
   student: "/student",
   teacher: "/teacher",
   parent: "/parent",
-  school_admin: "/school-admin",
+  school: "/school",
+  school_admin: "/school",
   platform_admin: "/master",
   pending: "/onboarding/role",
 };
@@ -115,9 +117,18 @@ export const masterNav: NavItem[] = [
 
 export const parentNav: NavItem[] = [
   { title: "Overview", href: "/parent", icon: Home, description: "Child progress snapshot" },
+  { title: "Child Requests", href: "/parent/child-requests", icon: ClipboardCheck, description: "Request or review child access" },
+  { title: "Linked Children", href: "/parent", icon: Users, description: "Approved child connections" },
   { title: "Progress", href: "/parent#progress", icon: LineChart, description: "Child learning trend placeholder" },
-  { title: "Homework", href: "/parent#homework", icon: FileText, description: "Homework summary placeholder" },
-  { title: "Teacher Notes", href: "/parent#notes", icon: BookOpen, description: "Teacher note placeholder" },
+];
+
+export const schoolNav: NavItem[] = [
+  { title: "Overview", href: "/school", icon: Home, description: "School portal overview" },
+  { title: "Child Requests", href: "/school/child-requests", icon: ClipboardCheck, description: "Review parent-child requests" },
+  { title: "Students", href: "/school/students", icon: GraduationCap, description: "Student roster" },
+  { title: "Classes", href: "/school/classes", icon: Building2, description: "Class structure" },
+  { title: "Teachers", href: "/school/teachers", icon: Users, description: "Teacher roster" },
+  { title: "Settings", href: "/school/settings", icon: Settings, description: "School settings placeholder" },
 ];
 
 export const legacyAdminNav: NavItem[] = [
