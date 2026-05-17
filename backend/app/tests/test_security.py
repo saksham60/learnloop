@@ -8,7 +8,7 @@ from jwt import PyJWKClientConnectionError
 
 from app.core.config import get_settings
 from app.core.exceptions import AuthenticationError
-from app.core.security import JWTValidator
+from app.core.security import JWTValidator, TokenSubject
 
 
 def test_hs256_supabase_token_is_accepted() -> None:
@@ -67,7 +67,7 @@ def test_asymmetric_supabase_token_uses_jwks(monkeypatch: pytest.MonkeyPatch) ->
     assert decode_calls == [("public-key", ["ES256"], settings.supabase_issuer)]
 
 
-def test_jwks_connection_error_becomes_authentication_error(
+def test_jwks_connection_error_falls_back_to_supabase_user_lookup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     settings = get_settings()
@@ -77,6 +77,43 @@ def test_jwks_connection_error_becomes_authentication_error(
     validator._jwks_client = SimpleNamespace(  # type: ignore[assignment]
         get_signing_key_from_jwt=lambda token: (_ for _ in ()).throw(
             PyJWKClientConnectionError("jwks unavailable"),
+        ),
+    )
+    monkeypatch.setattr(
+        validator,
+        "_decode_with_supabase_user_lookup",
+        lambda token: TokenSubject(
+            subject="student-789",
+            email="student3@example.com",
+            full_name="Student Three",
+            avatar_url=None,
+            raw_claims={"id": "student-789"},
+        ),
+    )
+
+    subject = validator.decode_token("asymmetric-token")
+
+    assert subject.subject == "student-789"
+    assert subject.email == "student3@example.com"
+
+
+def test_remote_lookup_failure_is_reported_as_authentication_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = get_settings()
+    validator = JWTValidator(settings)
+
+    monkeypatch.setattr(jwt, "get_unverified_header", lambda token: {"alg": "ES256", "kid": "kid-1"})
+    validator._jwks_client = SimpleNamespace(  # type: ignore[assignment]
+        get_signing_key_from_jwt=lambda token: (_ for _ in ()).throw(
+            PyJWKClientConnectionError("jwks unavailable"),
+        ),
+    )
+    monkeypatch.setattr(
+        validator,
+        "_decode_with_supabase_user_lookup",
+        lambda token: (_ for _ in ()).throw(
+            AuthenticationError("Unable to verify Supabase bearer token right now."),
         ),
     )
 

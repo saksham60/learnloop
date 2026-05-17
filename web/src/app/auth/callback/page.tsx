@@ -5,26 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingState } from "@/components/common/LoadingState";
-import { fetchCurrentProfile, isProfileMissingError, upsertProfile } from "@/features/auth/api";
+import { bootstrapCurrentProfile } from "@/features/auth/api";
 import { type UserProfile } from "@/features/auth/types";
 import { isFeatureUnavailableError, isNetworkApiError } from "@/lib/api/errors";
 import { roleDestinations } from "@/lib/constants";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
-
-function buildFallbackProfile(user: NonNullable<ReturnType<typeof useSupabaseAuth>["user"]>) {
-  return {
-    full_name:
-      user.user_metadata.full_name ||
-      user.user_metadata.name ||
-      user.email?.split("@")[0] ||
-      "LearnLoop member",
-    role: "pending" as const,
-    school_id: null,
-    grade_level: null,
-    avatar_url: user.user_metadata.avatar_url || user.user_metadata.picture || null,
-  };
-}
 
 function AuthCallbackPageContent() {
   const router = useRouter();
@@ -66,20 +52,10 @@ function AuthCallbackPageContent() {
     }
 
     let active = true;
-    const currentUser = user;
 
     async function syncProfile() {
       try {
-        let profile: UserProfile | null = null;
-        try {
-          profile = await fetchCurrentProfile();
-        } catch (requestError) {
-          if (isProfileMissingError(requestError)) {
-            profile = await upsertProfile(buildFallbackProfile(currentUser));
-          } else {
-            throw requestError;
-          }
-        }
+        const profile: UserProfile | null = await bootstrapCurrentProfile();
 
         if (!active || !profile) return;
         router.replace(next || roleDestinations[profile.role]);

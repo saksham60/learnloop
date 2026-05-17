@@ -37,6 +37,25 @@ export async function fetchCurrentProfile() {
   }
 }
 
+export async function bootstrapCurrentProfile() {
+  try {
+    const response = await apiRequest<UserProfile>("/api/v1/auth/bootstrap", {
+      method: "POST",
+      treat404AsUnavailable: true,
+    });
+    return response.data;
+  } catch (error) {
+    if (isFeatureUnavailableError(error)) {
+      throw new FeatureUnavailableError(
+        "Auth bootstrap is being connected to the backend.",
+        error.status,
+        error.payload,
+      );
+    }
+    throw error;
+  }
+}
+
 export async function upsertProfile(payload: ProfilePayload) {
   try {
     const response = await apiRequest<UserProfile>("/api/v1/auth/profile", {

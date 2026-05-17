@@ -19,6 +19,16 @@ async def get_me(
     return APIResponse(data=await service.get_profile(current_user))
 
 
+@router.post("/bootstrap", response_model=APIResponse[dict])
+async def bootstrap_profile(
+    session: SessionDep,
+    subject=Depends(get_token_subject),
+) -> APIResponse[dict]:
+    service = AuthService(session)
+    data = await service.bootstrap_profile(subject)
+    return APIResponse(data=data, message="profile ready")
+
+
 @router.post("/profile", response_model=APIResponse[dict])
 async def create_profile(
     payload: ProfilePayload,

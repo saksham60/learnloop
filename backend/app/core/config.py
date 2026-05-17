@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/student_companion",
         alias="DATABASE_URL",
     )
-    supabase_jwt_secret: str = Field(default="dev-jwt-secret", alias="SUPABASE_JWT_SECRET")
+    supabase_jwt_secret: str | None = Field(default=None, alias="SUPABASE_JWT_SECRET")
     supabase_storage_bucket_teacher_content: str = Field(
         default="teacher-content",
         alias="SUPABASE_STORAGE_BUCKET_TEACHER_CONTENT",
@@ -130,6 +130,10 @@ class Settings(BaseSettings):
     @property
     def supabase_jwks_url(self) -> str:
         return f"{self.supabase_issuer}/.well-known/jwks.json"
+
+    @property
+    def supabase_user_url(self) -> str:
+        return f"{self.supabase_issuer}/user"
 
 
 @lru_cache(maxsize=1)
