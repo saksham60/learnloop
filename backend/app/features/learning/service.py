@@ -9,6 +9,7 @@ from app.api.dependencies import CurrentUser
 from app.core.constants import EventType
 from app.core.exceptions import RuleViolationError
 from app.db.repositories.event_repository import EventRepository
+from app.db.repositories.learning_session_repository import LearningSessionRepository
 from app.features.learning.socratic_state_machine import SocraticState, SocraticStateMachine
 from app.llm.gateway import LLMGateway
 
@@ -28,9 +29,29 @@ class LearningService:
         self._session = session
         self._state_machine = state_machine
         self._events = EventRepository(session)
+        self._learning_sessions = LearningSessionRepository(session)
         self._llm_gateway = llm_gateway
 
+    async def _ensure_learning_session(self, current_user: CurrentUser, session_id: UUID | None) -> UUID | None:
+        if session_id is None or current_user.user_id is None:
+            return None
+
+        existing = await self._learning_sessions.get_by_id(session_id)
+        if existing is None:
+            await self._learning_sessions.create(
+                session_id=session_id,
+                student_id=current_user.user_id,
+                school_id=current_user.school_id,
+            )
+            return session_id
+
+        if existing.student_id != current_user.user_id:
+            raise RuleViolationError("This learning session does not belong to the current student.")
+
+        return session_id
+
     async def chat(self, current_user: CurrentUser, command: LearningChatCommand) -> dict:
+        session_id = await self._ensure_learning_session(current_user, command.session_id)
         decision = self._state_machine.next_action(
             SocraticState(
                 attempts_count=command.attempts_count,
@@ -49,7 +70,7 @@ class LearningService:
         await self._events.create_event(
             student_id=current_user.user_id,
             school_id=current_user.school_id,
-            session_id=command.session_id,
+            session_id=session_id,
             event_type=EventType.CHAT_MESSAGE,
             payload={"message": command.message, "decision": decision.action},
         )
@@ -57,6 +78,7 @@ class LearningService:
         return {"response": response_text, "decision": decision.action}
 
     async def attempt(self, current_user: CurrentUser, session_id: UUID | None, answer: str) -> dict:
+        session_id = await self._ensure_learning_session(current_user, session_id)
         await self._events.create_event(
             student_id=current_user.user_id,
             school_id=current_user.school_id,
@@ -68,6 +90,7 @@ class LearningService:
         return {"status": "attempt_logged"}
 
     async def hint(self, current_user: CurrentUser, command: LearningChatCommand) -> dict:
+        session_id = await self._ensure_learning_session(current_user, command.session_id)
         decision = self._state_machine.next_action(
             SocraticState(
                 attempts_count=command.attempts_count,
@@ -84,7 +107,7 @@ class LearningService:
         await self._events.create_event(
             student_id=current_user.user_id,
             school_id=current_user.school_id,
-            session_id=command.session_id,
+            session_id=session_id,
             event_type=EventType.HINT_REQUESTED,
             payload={"message": command.message},
         )
@@ -92,6 +115,7 @@ class LearningService:
         return {"hint": hint_text}
 
     async def explain_after_effort(self, current_user: CurrentUser, command: LearningChatCommand) -> dict:
+        session_id = await self._ensure_learning_session(current_user, command.session_id)
         decision = self._state_machine.next_action(
             SocraticState(
                 attempts_count=command.attempts_count,
@@ -111,10 +135,9 @@ class LearningService:
         await self._events.create_event(
             student_id=current_user.user_id,
             school_id=current_user.school_id,
-            session_id=command.session_id,
+            session_id=session_id,
             event_type=EventType.EXPLANATION_REVEALED,
             payload={"message": command.message},
         )
         await self._session.commit()
         return {"explanation": explanation}
-
