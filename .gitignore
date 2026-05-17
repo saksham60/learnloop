@@ -23,3 +23,6 @@ build/
 
 .DS_Store
 Thumbs.db
+
+temp_chunk_*.js
+temp_login.html
