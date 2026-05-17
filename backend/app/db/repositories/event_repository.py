@@ -60,3 +60,21 @@ class EventRepository:
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def list_session_events(
+        self,
+        *,
+        student_id: UUID,
+        session_id: UUID,
+        limit: int = 12,
+    ) -> list[LearningEvent]:
+        result = await self._session.execute(
+            select(LearningEvent)
+            .where(
+                LearningEvent.student_id == student_id,
+                LearningEvent.session_id == session_id,
+            )
+            .order_by(desc(LearningEvent.created_at))
+            .limit(limit)
+        )
+        return list(reversed(list(result.scalars().all())))
