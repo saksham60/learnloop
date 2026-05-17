@@ -129,7 +129,7 @@ class Settings(BaseSettings):
 
     @property
     def supabase_jwks_url(self) -> str:
-        return f"{self.supabase_issuer}/jwks"
+        return f"{self.supabase_issuer}/.well-known/jwks.json"
 
 
 @lru_cache(maxsize=1)
