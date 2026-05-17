@@ -11,6 +11,7 @@ import { useCurrentProfile } from "@/features/auth/hooks/useCurrentProfile";
 import type { AppRole } from "@/lib/constants";
 import { ApiError, isFeatureUnavailableError, isNetworkApiError } from "@/lib/api/errors";
 import { evaluateRoleAccess } from "@/features/role-gate/utils";
+import { useDemoProfile } from "@/lib/demo/demo-auth";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
 
 export function RoleGate({
@@ -22,10 +23,20 @@ export function RoleGate({
   const pathname = usePathname();
   const router = useRouter();
   const { isEnabled, isReady, user } = useSupabaseAuth();
+  const demoProfile = useDemoProfile();
   const profileQuery = useCurrentProfile();
-  const profile = profileQuery.data;
+  const profile = demoProfile ?? profileQuery.data;
+  const isDemoActive = Boolean(demoProfile);
 
   useEffect(() => {
+    if (isDemoActive) {
+      const decision = evaluateRoleAccess(demoProfile, allowedRoles);
+      if (decision.kind === "redirect") {
+        router.replace(decision.href);
+      }
+      return;
+    }
+
     if (!isEnabled || !isReady) return;
 
     if (!user) {
@@ -42,9 +53,9 @@ export function RoleGate({
     if (decision.kind === "redirect") {
       router.replace(decision.href);
     }
-  }, [allowedRoles, isEnabled, isReady, pathname, profile, profileQuery.error, router, user]);
+  }, [allowedRoles, demoProfile, isDemoActive, isEnabled, isReady, pathname, profile, profileQuery.error, router, user]);
 
-  if (!isEnabled) {
+  if (!isEnabled && !isDemoActive) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
         <EmptyState
@@ -53,6 +64,33 @@ export function RoleGate({
         />
       </div>
     );
+  }
+
+  if (isDemoActive) {
+    const decision = evaluateRoleAccess(profile, allowedRoles);
+    if (decision.kind === "forbidden") {
+      return (
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <EmptyState
+            title="You do not have access to this area"
+            description="Your current LearnLoop role does not allow access to this workspace."
+          />
+        </div>
+      );
+    }
+
+    if (decision.kind !== "allow") {
+      return (
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <LoadingState
+            title="Routing your workspace"
+            description="Taking you to the right LearnLoop space."
+          />
+        </div>
+      );
+    }
+
+    return children;
   }
 
   if (!isReady || (!user && isEnabled)) {

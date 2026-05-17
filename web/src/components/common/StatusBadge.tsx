@@ -5,12 +5,11 @@ export function StatusBadge({ status }: { status?: string | null }) {
   if (["completed", "ready", "success", "active", "submitted"].includes(normalized)) {
     return <Badge variant="success">{status}</Badge>;
   }
-  if (["pending", "processing", "in_progress", "scheduled"].includes(normalized)) {
+  if (["pending", "pending_approval", "processing", "in_progress", "scheduled"].includes(normalized)) {
     return <Badge variant="warning">{status}</Badge>;
   }
-  if (["failed", "error", "rejected"].includes(normalized)) {
+  if (["failed", "error", "rejected", "suspended"].includes(normalized)) {
     return <Badge variant="danger">{status}</Badge>;
   }
   return <Badge variant="outline">{status || "Unknown"}</Badge>;
 }
-

@@ -4,12 +4,14 @@ import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailSignInForm } from "@/features/auth/components/EmailSignInForm";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
 import { BackendHealthBadge } from "@/features/health/components/BackendHealthBadge";
 import { APP_NAME, APP_TAGLINE, featureFlags } from "@/lib/constants";
+import { getDemoRoleDestinations, setDemoRole, type DemoAccessRole } from "@/lib/demo/demo-auth";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
 
 function LoginPageContent() {
@@ -17,6 +19,12 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const { isReady, user } = useSupabaseAuth();
+  const demoDestinations = getDemoRoleDestinations();
+
+  function handleDemoAccess(role: DemoAccessRole) {
+    setDemoRole(role);
+    router.replace(demoDestinations[role]);
+  }
 
   useEffect(() => {
     if (!isReady) return;
@@ -80,6 +88,35 @@ function LoginPageContent() {
               Your access role is determined after sign-in. Pending users will see an approval
               screen until their school role is confirmed.
             </p>
+            {featureFlags.demoMode ? (
+              <div className="rounded-[1.5rem] border border-primary/20 bg-primary/5 p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">
+                    Demo Access
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Demo-only shortcuts. These do not replace Google Auth and are shown only while demo mode is enabled.
+                  </p>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("student")}>
+                    Continue as Demo Student
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("teacher")}>
+                    Continue as Demo Teacher
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("school_admin")}>
+                    Continue as Demo School Admin
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => handleDemoAccess("platform_admin")}>
+                    Continue as Demo Master Admin
+                  </Button>
+                  <Button type="button" variant="secondary" className="sm:col-span-2" onClick={() => handleDemoAccess("parent")}>
+                    Continue as Demo Parent
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             <p className="text-sm text-muted-foreground">
               Looking for context first? <Link href="/about" className="text-primary underline-offset-4 hover:underline">Read about LearnLoop.</Link>
             </p>

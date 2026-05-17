@@ -1,5 +1,11 @@
 import { apiRequest } from "@/lib/api/client";
 import { isFeatureUnavailableError, isNetworkApiError } from "@/lib/api/errors";
+import {
+  getDemoProfile,
+  getDemoStudentActivity,
+  getDemoStudentDashboard,
+  getDemoStudentFocus,
+} from "@/lib/demo/demo-auth";
 
 import type {
   StudentDashboardStats,
@@ -35,6 +41,10 @@ const emptyDashboardStats = {
 };
 
 export async function fetchStudentDashboardStats(): Promise<StudentDashboardStats> {
+  if (getDemoProfile()) {
+    return getDemoStudentDashboard() ?? dashboardFallback;
+  }
+
   try {
     const response = await apiRequest<Omit<StudentDashboardStats, "source" | "fallback_message">>(
       "/api/v1/students/me/dashboard",
@@ -54,6 +64,14 @@ export async function fetchStudentDashboardStats(): Promise<StudentDashboardStat
 }
 
 export async function fetchStudentEvents(): Promise<StudentSectionResult<StudentEvent>> {
+  if (getDemoProfile()) {
+    return {
+      items: getDemoStudentActivity(),
+      source: "fallback",
+      fallback_message: "Demo data is active for recent learning events.",
+    };
+  }
+
   try {
     const response = await apiRequest<StudentEvent[]>("/api/v1/students/me/events", {
       treat404AsUnavailable: true,
@@ -72,6 +90,14 @@ export async function fetchStudentEvents(): Promise<StudentSectionResult<Student
 }
 
 export async function fetchStudentFocusSignals(): Promise<StudentSectionResult<StudentFocusSignal>> {
+  if (getDemoProfile()) {
+    return {
+      items: getDemoStudentFocus(),
+      source: "fallback",
+      fallback_message: "Demo data is active for student focus signals.",
+    };
+  }
+
   try {
     const response = await apiRequest<StudentFocusSignal[]>("/api/v1/students/me/focus", {
       treat404AsUnavailable: true,

@@ -1,8 +1,17 @@
 import { apiRequest } from "@/lib/api/client";
+import {
+  assignDemoMasterSchoolAdmin,
+  createDemoMasterSchoolRecord,
+  getDemoMasterData,
+  updateDemoMasterSchoolRecord,
+} from "@/lib/demo/demo-auth";
 
 import type { MasterOverview, MasterSchool, MasterUser, SchoolAdminAssignment } from "@/features/master-admin/types";
 
 export async function getMasterOverview() {
+  const demo = getDemoMasterData();
+  if (demo) return demo.overview;
+
   const response = await apiRequest<MasterOverview>("/api/v1/master/overview", {
     treat404AsUnavailable: true,
   });
@@ -10,6 +19,9 @@ export async function getMasterOverview() {
 }
 
 export async function getMasterSchools() {
+  const demo = getDemoMasterData();
+  if (demo) return demo.schools;
+
   const response = await apiRequest<MasterSchool[]>("/api/v1/master/schools", {
     treat404AsUnavailable: true,
   });
@@ -25,6 +37,11 @@ export async function createMasterSchool(payload: {
   contact_email?: string | null;
   status?: "active" | "inactive";
 }) {
+  if (getDemoMasterData()) {
+    createDemoMasterSchoolRecord(payload);
+    return { status: "created" };
+  }
+
   const response = await apiRequest("/api/v1/master/schools", {
     method: "POST",
     body: payload,
@@ -45,6 +62,11 @@ export async function updateMasterSchool(
     status?: "active" | "inactive" | null;
   },
 ) {
+  if (getDemoMasterData()) {
+    updateDemoMasterSchoolRecord(schoolId, payload);
+    return { status: "updated" };
+  }
+
   const response = await apiRequest(`/api/v1/master/schools/${schoolId}`, {
     method: "PATCH",
     body: payload,
@@ -54,6 +76,9 @@ export async function updateMasterSchool(
 }
 
 export async function getMasterUsers() {
+  const demo = getDemoMasterData();
+  if (demo) return demo.users;
+
   const response = await apiRequest<MasterUser[]>("/api/v1/master/users", {
     treat404AsUnavailable: true,
   });
@@ -61,6 +86,9 @@ export async function getMasterUsers() {
 }
 
 export async function getSchoolAdmins() {
+  const demo = getDemoMasterData();
+  if (demo) return demo.schoolAdmins;
+
   const response = await apiRequest<SchoolAdminAssignment[]>("/api/v1/master/school-admins", {
     treat404AsUnavailable: true,
   });
@@ -68,6 +96,11 @@ export async function getSchoolAdmins() {
 }
 
 export async function assignSchoolAdmin(payload: { email: string; school_id: string }) {
+  if (getDemoMasterData()) {
+    assignDemoMasterSchoolAdmin(payload);
+    return { email: payload.email, school_id: payload.school_id, approval_status: "active" };
+  }
+
   const response = await apiRequest<SchoolAdminAssignment>("/api/v1/master/school-admins/assign", {
     method: "POST",
     body: payload,

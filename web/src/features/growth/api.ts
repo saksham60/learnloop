@@ -1,8 +1,12 @@
 import { apiRequest } from "@/lib/api/client";
+import { getDemoProfile, getDemoStudentGrowthList } from "@/lib/demo/demo-auth";
 
 import type { GrowthActivity, GrowthActivityPayload, GrowthActivityResult } from "./types";
 
 export async function listGrowthActivities() {
+  if (getDemoProfile()) {
+    return getDemoStudentGrowthList();
+  }
   const response = await apiRequest<GrowthActivity[]>("/api/v1/growth/activities", {
     treat404AsUnavailable: true,
   });

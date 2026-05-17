@@ -1,5 +1,12 @@
 import { apiRequest } from "@/lib/api/client";
 import { fetchAgentRunSteps } from "@/features/student-companion/api";
+import {
+  getDemoProfile,
+  getDemoTeacherClassAnalytics,
+  getDemoTeacherClassesList,
+  getDemoTeacherMisconceptions,
+  getDemoTeacherWeakTopics,
+} from "@/lib/demo/demo-auth";
 
 import type {
   ClassAnalytics,
@@ -10,6 +17,9 @@ import type {
 } from "./types";
 
 export async function listTeacherClasses() {
+  if (getDemoProfile()) {
+    return getDemoTeacherClassesList();
+  }
   const response = await apiRequest<TeacherClass[]>("/api/v1/teachers/me/classes", {
     treat404AsUnavailable: true,
   });
@@ -17,6 +27,9 @@ export async function listTeacherClasses() {
 }
 
 export async function getClassAnalytics(classId: string) {
+  if (getDemoProfile()) {
+    return getDemoTeacherClassAnalytics(classId);
+  }
   const response = await apiRequest<ClassAnalytics>(`/api/v1/teachers/classes/${classId}/analytics`, {
     treat404AsUnavailable: true,
   });
@@ -24,6 +37,9 @@ export async function getClassAnalytics(classId: string) {
 }
 
 export async function getClassWeakTopics(classId: string) {
+  if (getDemoProfile()) {
+    return getDemoTeacherWeakTopics(classId);
+  }
   const response = await apiRequest<ClassWeakTopic[]>(`/api/v1/teachers/classes/${classId}/weak-topics`, {
     treat404AsUnavailable: true,
   });
@@ -31,6 +47,9 @@ export async function getClassWeakTopics(classId: string) {
 }
 
 export async function getClassMisconceptions(classId: string) {
+  if (getDemoProfile()) {
+    return getDemoTeacherMisconceptions(classId);
+  }
   const response = await apiRequest<ClassMisconception[]>(
     `/api/v1/teachers/classes/${classId}/misconceptions`,
     {

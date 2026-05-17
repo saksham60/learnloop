@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { clearDemoProfile, getDemoProfile } from "@/lib/demo/demo-auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSupabaseAuth } from "@/providers/SupabaseProvider";
 
@@ -70,9 +71,13 @@ export function useAuthActions() {
   }
 
   async function signOut() {
+    if (getDemoProfile()) {
+      clearDemoProfile();
+    }
     const client = getSupabaseBrowserClient();
-    if (!client) return;
-    await client.auth.signOut();
+    if (client) {
+      await client.auth.signOut();
+    }
     router.replace("/login");
   }
 

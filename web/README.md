@@ -57,6 +57,7 @@ NEXT_PUBLIC_APP_URL=https://learnloop-drab.vercel.app
 NEXT_PUBLIC_API_BASE_URL=https://learnloop-wpdv.onrender.com
 NEXT_PUBLIC_SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_DEMO_MODE=false
 NEXT_PUBLIC_ENABLE_GOOGLE_AUTH=true
 NEXT_PUBLIC_ENABLE_EMAIL_AUTH=true
 NEXT_PUBLIC_ENABLE_STUDENT_APP=true
@@ -112,6 +113,39 @@ After sign-in:
 - `pending_approval` -> `/onboarding/pending-approval`
 - `rejected` -> `/onboarding/rejected`
 - `suspended` -> `/onboarding/suspended`
+
+## Demo Mode
+
+Demo mode is frontend-only and must be enabled explicitly:
+
+```env
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+When enabled:
+
+- the login page shows a `Demo Access` section
+- you can jump into demo `student`, `teacher`, `parent`, `school_admin`, or `platform_admin` sessions
+- the top bar shows a `Demo Mode` badge with `Switch Demo Role` and `Exit Demo Mode`
+- school admin and master admin pages use seeded demo data instead of crashing if backend endpoints are unavailable
+
+When disabled:
+
+- demo buttons disappear from `/login`
+- demo role switching is hidden
+- seeded demo data is not used
+
+The seeded demo dataset lives in:
+
+```text
+src/lib/demo/demo-data.ts
+```
+
+The local demo session helper lives in:
+
+```text
+src/lib/demo/demo-auth.ts
+```
 
 ## Route Areas
 

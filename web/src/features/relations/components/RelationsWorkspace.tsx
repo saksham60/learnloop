@@ -20,6 +20,7 @@ import {
   useSchoolRelations,
   useSchoolTeachers,
 } from "@/features/school-admin/hooks/useSchoolAdmin";
+import type { ManagedParent, ManagedTeacher } from "@/features/school-admin/types";
 import { isFeatureUnavailableError } from "@/lib/api/errors";
 
 function parseIds(value: string) {
@@ -174,7 +175,7 @@ export function RelationsWorkspace() {
                 className="flex h-11 w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm"
               >
                 <option value="">Select teacher</option>
-                {(teachersQuery.data ?? []).map((teacher) => (
+                {(teachersQuery.data ?? []).map((teacher: ManagedTeacher) => (
                   <option key={teacher.id} value={teacher.id}>
                     {teacher.full_name}
                   </option>
@@ -245,7 +246,7 @@ export function RelationsWorkspace() {
                 className="flex h-11 w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm"
               >
                 <option value="">Select parent</option>
-                {(parentsQuery.data ?? []).map((parent) => (
+                {(parentsQuery.data ?? []).map((parent: ManagedParent) => (
                   <option key={parent.id} value={parent.id}>
                     {parent.full_name}
                   </option>

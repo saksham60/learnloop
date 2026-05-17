@@ -42,6 +42,7 @@ export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://learnloop-wpdv.onrender.com";
 
 export const featureFlags = {
+  demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
   googleAuth: process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH !== "false",
   emailAuth: process.env.NEXT_PUBLIC_ENABLE_EMAIL_AUTH !== "false",
   studentApp: process.env.NEXT_PUBLIC_ENABLE_STUDENT_APP !== "false",

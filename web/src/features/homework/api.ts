@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api/client";
 import { fetchAgentRunSteps } from "@/features/student-companion/api";
+import { getDemoProfile, getDemoStudentHomeworkList } from "@/lib/demo/demo-auth";
 
 import type {
   HomeworkAnalytics,
@@ -15,6 +16,9 @@ import type {
 } from "./types";
 
 export async function listHomework() {
+  if (getDemoProfile()) {
+    return getDemoStudentHomeworkList();
+  }
   const response = await apiRequest<HomeworkSummary[]>("/api/v1/homework");
   return response.data ?? [];
 }
