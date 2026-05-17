@@ -123,6 +123,14 @@ class Settings(BaseSettings):
             return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
         return self.database_url
 
+    @property
+    def supabase_issuer(self) -> str:
+        return f"{self.supabase_url.rstrip('/')}/auth/v1"
+
+    @property
+    def supabase_jwks_url(self) -> str:
+        return f"{self.supabase_issuer}/jwks"
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
