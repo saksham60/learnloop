@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:3000"],
         alias="CORS_ALLOWED_ORIGINS",
     )
+    cors_allowed_origin_regex: str | None = Field(default=None, alias="CORS_ALLOWED_ORIGIN_REGEX")
 
     supabase_url: str = Field(default="https://example.supabase.co", alias="SUPABASE_URL")
     supabase_anon_key: str = Field(default="anon-key", alias="SUPABASE_ANON_KEY")

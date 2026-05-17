@@ -57,6 +57,7 @@ LOG_LEVEL=INFO
 
 FRONTEND_URL=https://learnloop-drab.vercel.app
 CORS_ALLOWED_ORIGINS=https://learnloop-drab.vercel.app,http://localhost:3000
+CORS_ALLOWED_ORIGIN_REGEX=
 
 SUPABASE_URL=https://jafvclvcipybinssrmka.supabase.co
 SUPABASE_ANON_KEY=...
@@ -77,6 +78,13 @@ Important:
 
 - `FRONTEND_URL` is now automatically added to the backend CORS allowlist in code.
 - `CORS_ALLOWED_ORIGINS` should still include both production and local development origins.
+- If you use Vercel preview URLs or multiple frontend domains, set `CORS_ALLOWED_ORIGIN_REGEX`.
+  Example:
+
+```env
+CORS_ALLOWED_ORIGIN_REGEX=https://.*\.vercel\.app
+```
+
 - After changing Render env vars, redeploy the backend.
 
 ## Demo Mode
