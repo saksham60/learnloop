@@ -34,6 +34,84 @@ class LLMGateway:
         sanitized = sanitized.strip()
         return sanitized or text.strip()
 
+    def _extract_progress_count(self, label: str, structured_summary: str) -> int | None:
+        match = re.search(rf"{re.escape(label)}:\s*(\d+)", structured_summary, flags=re.IGNORECASE)
+        return int(match.group(1)) if match else None
+
+    def _contains_progress_phrase(self, phrase: str, structured_summary: str) -> bool:
+        return phrase.lower() in structured_summary.lower()
+
+    def _fallback_progress_answer(self, structured_summary: str, user_question: str) -> str:
+        question = user_question.lower()
+        pending_homework = self._extract_progress_count("Pending homework", structured_summary)
+        completed_homework = self._extract_progress_count("Completed homework", structured_summary)
+        has_focus_areas = not self._contains_progress_phrase("No active focus areas.", structured_summary)
+        has_topic_data = not self._contains_progress_phrase("No topic performance data available.", structured_summary)
+        growth_match = re.search(
+            r"Growth recommendations:\s*(.+)",
+            structured_summary,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        growth_recommendation = growth_match.group(1).strip() if growth_match else None
+
+        if "what should i study" in question or ("study" in question and "today" in question):
+            if pending_homework and pending_homework > 0:
+                return (
+                    f"Start with your pending homework first. LearnLoop currently shows "
+                    f"{pending_homework} homework item(s) still pending."
+                )
+            if has_focus_areas:
+                return (
+                    "Start with your current focus areas first. LearnLoop has already marked them as your "
+                    "best study priority for today."
+                )
+            if not has_topic_data:
+                response = (
+                    "There is not a specific study priority listed in LearnLoop right now. "
+                    "You have no pending homework, no active focus areas, and no topic performance data yet."
+                )
+                if growth_recommendation:
+                    response += f" After study time, {growth_recommendation.lower()}"
+                return response
+
+        if "homework" in question and ("which" in question or "pending" in question or "what" in question):
+            if pending_homework is None:
+                return "LearnLoop does not have a homework summary available right now."
+            if pending_homework == 0:
+                return (
+                    f"You do not have any pending homework right now. "
+                    f"Completed homework recorded in LearnLoop: {completed_homework or 0}."
+                )
+            return f"You currently have {pending_homework} pending homework item(s) in LearnLoop."
+
+        if "weak" in question or "improve" in question or "improved" in question:
+            if not has_topic_data:
+                return (
+                    "LearnLoop does not have topic performance data yet, so it cannot identify a weak area or "
+                    "measure improvement right now."
+                )
+
+        if "hint" in question:
+            return (
+                "The current progress summary does not include hint-usage details yet, so LearnLoop cannot explain "
+                "that from this snapshot."
+            )
+
+        response = "Here is your current LearnLoop summary: "
+        if pending_homework is not None:
+            response += f"{pending_homework} pending homework item(s). "
+        if completed_homework is not None:
+            response += f"{completed_homework} completed homework item(s). "
+        if has_focus_areas:
+            response += "You have active focus areas to work through. "
+        else:
+            response += "You do not have active focus areas listed right now. "
+        if not has_topic_data:
+            response += "Topic performance data is not available yet. "
+        if growth_recommendation:
+            response += growth_recommendation
+        return response.strip()
+
     async def generate_text(
         self,
         *,
@@ -117,10 +195,7 @@ class LLMGateway:
                 user_prompt=f"Summary:\n{structured_summary}\n\nQuestion:\n{user_question}",
             )
         except LLMUnavailableError:
-            return (
-                "The model gateway is unavailable right now. Use your current focus areas and pending "
-                "homework list as the next study priority, then retry for a fuller explanation."
-            )
+            return self._fallback_progress_answer(structured_summary, user_question)
 
     async def evaluate_response(self, response_text: str) -> SafetyCheckResult:
         # Deterministic enforcement happens locally first; the LLM prompt is reserved for future policy expansion.

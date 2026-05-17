@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import httpx
@@ -7,6 +8,8 @@ import httpx
 from app.core.config import Settings
 from app.llm.exceptions import InvalidLLMResponseError, LLMUnavailableError
 from app.llm.schemas import LLMMessage
+
+logger = logging.getLogger(__name__)
 
 
 class GemmaClient:
@@ -45,8 +48,20 @@ class GemmaClient:
                 response.raise_for_status()
                 data = response.json()
             except httpx.HTTPError as exc:
+                status_code = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None
+                response_body = exc.response.text[:500] if isinstance(exc, httpx.HTTPStatusError) else None
+                logger.warning(
+                    "Gemma gateway request failed",
+                    extra={
+                        "gemma_api_base_url": self._settings.gemma_api_base_url,
+                        "gemma_model": self._settings.gemma_model,
+                        "status_code": status_code,
+                        "response_body": response_body,
+                        "error": str(exc),
+                    },
+                )
                 raise LLMUnavailableError(
-                    f"Gemma gateway is unavailable or misconfigured: {self._settings.gemma_api_base_url}",
+                    "Gemma gateway is unavailable or misconfigured."
                 ) from exc
         finally:
             if close_after:
