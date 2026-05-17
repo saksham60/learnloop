@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from app.core.config import Settings
 from app.llm.exceptions import InvalidLLMResponseError, LLMUnavailableError, UnsupportedProviderError
@@ -27,6 +28,12 @@ class LLMGateway:
         if not self._settings.gemma_model.startswith("gemma-4"):
             raise UnsupportedProviderError("The backend only allows Gemma 4 models.")
 
+    def _sanitize_model_text(self, text: str) -> str:
+        sanitized = re.sub(r"<thought>.*?</thought>", "", text, flags=re.IGNORECASE | re.DOTALL)
+        sanitized = re.sub(r"<think>.*?</think>", "", sanitized, flags=re.IGNORECASE | re.DOTALL)
+        sanitized = sanitized.strip()
+        return sanitized or text.strip()
+
     async def generate_text(
         self,
         *,
@@ -39,11 +46,12 @@ class LLMGateway:
             LLMMessage(role="system", content=system_prompt),
             LLMMessage(role="user", content=user_prompt),
         ]
-        return await self._gemma_client.generate(
+        raw_text = await self._gemma_client.generate(
             messages,
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        return self._sanitize_model_text(raw_text)
 
     async def generate_json(self, *, system_prompt: str, user_prompt: str) -> dict:
         raw = await self.generate_text(

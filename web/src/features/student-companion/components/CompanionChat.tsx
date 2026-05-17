@@ -79,6 +79,24 @@ function pickResponseText(result: LearningGuidedResponse | null) {
   return null;
 }
 
+function pickSuggestedAction(result: LearningGuidedResponse | null) {
+  if (!result?.decision) {
+    return "Ask one question, share your own attempt, then use a hint only when you genuinely need the next nudge.";
+  }
+
+  if (result.decision === "guide") {
+    return "Answer the guiding question in your own words before asking for more help.";
+  }
+  if (result.decision === "hint") {
+    return "Use the hint to complete the next small step, then update your attempt.";
+  }
+  if (result.decision === "explain") {
+    return "Read the explanation, then answer the final check question in your own words.";
+  }
+
+  return "Keep working from the last guided response and record your next attempt.";
+}
+
 export function CompanionChat() {
   const [mode, setMode] = useState<CompanionMode>("teach_me_slowly");
   const [message, setMessage] = useState("");
@@ -298,10 +316,7 @@ export function CompanionChat() {
 
           <ThinkingStepCard
             title="Suggested next action"
-            description={
-              responsePreview?.text ||
-              "Ask one question, share your own attempt, then use a hint only when you genuinely need the next nudge."
-            }
+            description={pickSuggestedAction(latestResponse)}
           />
 
           {responsePreview ? (
