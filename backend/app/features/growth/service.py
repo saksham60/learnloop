@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import CurrentUser
 from app.core.constants import EventType, GrowthActivityStatus
 from app.core.exceptions import NotFoundError, RuleViolationError
+from app.core.time import utcnow_naive
 from app.db.models.growth import GrowthActivity
 from app.db.repositories.event_repository import EventRepository
 from app.features.growth.safety_rules import GrowthSafetyRules
@@ -62,7 +61,7 @@ class GrowthService:
         if activity is None or activity.student_id != current_user.user_id:
             raise NotFoundError("Growth activity not found.")
         activity.status = GrowthActivityStatus.COMPLETED
-        activity.completed_at = datetime.now(timezone.utc)
+        activity.completed_at = utcnow_naive()
         await self._events.create_event(
             student_id=current_user.user_id,
             school_id=current_user.school_id,
@@ -71,4 +70,3 @@ class GrowthService:
         )
         await self._session.commit()
         return {"id": str(activity.id), "status": activity.status.value}
-

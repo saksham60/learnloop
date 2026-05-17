@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 from app.core.config import Settings
-from app.llm.exceptions import InvalidLLMResponseError
+from app.llm.exceptions import InvalidLLMResponseError, LLMUnavailableError
 from app.llm.schemas import LLMMessage
 
 
@@ -40,9 +40,14 @@ class GemmaClient:
             },
         )
         try:
-            response = await client.post("/chat/completions", json=payload)
-            response.raise_for_status()
-            data = response.json()
+            try:
+                response = await client.post("/chat/completions", json=payload)
+                response.raise_for_status()
+                data = response.json()
+            except httpx.HTTPError as exc:
+                raise LLMUnavailableError(
+                    f"Gemma gateway is unavailable or misconfigured: {self._settings.gemma_api_base_url}",
+                ) from exc
         finally:
             if close_after:
                 await client.aclose()
@@ -51,4 +56,3 @@ class GemmaClient:
             return data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
             raise InvalidLLMResponseError("Gemma gateway returned an unexpected response shape.") from exc
-

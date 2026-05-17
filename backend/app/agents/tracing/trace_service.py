@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import AgentRunStatus, Role
+from app.core.time import utcnow_naive
 from app.db.models.agent_trace import AgentRun, AgentStep, AgentToolCall
 
 
@@ -31,7 +31,7 @@ class TraceService:
             status=AgentRunStatus.RUNNING,
             final_response=None,
             metadata_json=metadata,
-            created_at=datetime.now(timezone.utc),
+            created_at=utcnow_naive(),
             completed_at=None,
         )
         self._session.add(run)
@@ -53,7 +53,7 @@ class TraceService:
             agent_name=agent_name,
             input_json=input_payload,
             output_json=output_payload,
-            created_at=datetime.now(timezone.utc),
+            created_at=utcnow_naive(),
         )
         self._session.add(step)
         await self._session.flush()
@@ -74,7 +74,7 @@ class TraceService:
             input_json=input_payload,
             output_json=output_payload,
             status=status,
-            created_at=datetime.now(timezone.utc),
+            created_at=utcnow_naive(),
         )
         self._session.add(tool_call)
         await self._session.flush()
@@ -86,7 +86,7 @@ class TraceService:
             return
         run.status = AgentRunStatus.COMPLETED
         run.final_response = final_response
-        run.completed_at = datetime.now(timezone.utc)
+        run.completed_at = utcnow_naive()
         await self._session.flush()
 
     async def fail_run(self, *, agent_run_id: UUID, detail: str) -> None:
@@ -95,7 +95,7 @@ class TraceService:
             return
         run.status = AgentRunStatus.FAILED
         run.final_response = detail
-        run.completed_at = datetime.now(timezone.utc)
+        run.completed_at = utcnow_naive()
         await self._session.flush()
 
     async def get_run(self, run_id: UUID) -> AgentRun | None:
@@ -106,4 +106,3 @@ class TraceService:
             select(AgentStep).where(AgentStep.agent_run_id == run_id).order_by(AgentStep.created_at.asc())
         )
         return list(result.scalars().all())
-

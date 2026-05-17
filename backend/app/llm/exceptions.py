@@ -12,3 +12,6 @@ class UnsupportedProviderError(LLMError):
 class InvalidLLMResponseError(LLMError):
     """Raised when the model gateway returns malformed data."""
 
+
+class LLMUnavailableError(LLMError):
+    """Raised when the configured model gateway cannot be reached."""

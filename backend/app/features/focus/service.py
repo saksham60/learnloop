@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import CurrentUser
 from app.core.constants import EventType, FocusAreaStatus
+from app.core.time import utcnow_naive
 from app.db.models.focus_area import FocusArea
 from app.db.repositories.event_repository import EventRepository
 from app.db.repositories.focus_repository import FocusRepository
@@ -60,7 +61,7 @@ class FocusService:
                 status=FocusAreaStatus.ACTIVE,
                 recommended_action="Review the latest mistakes and practice one targeted question.",
                 rationale={"drivers": item.drivers},
-                last_evaluated_at=datetime.now(timezone.utc),
+                last_evaluated_at=utcnow_naive(),
             )
             for item in scored[:5]
         ]
@@ -85,4 +86,3 @@ class FocusService:
         )
         await self._session.commit()
         return await self.get_today_focus(current_user)
-

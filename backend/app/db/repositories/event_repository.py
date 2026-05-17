@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import EventType, SyncStatus
+from app.core.time import utcnow_naive
 from app.db.models.learning_event import LearningEvent
 
 
@@ -39,7 +39,7 @@ class EventRepository:
             payload=payload or {},
             device_id=device_id,
             sync_status=sync_status,
-            created_at=datetime.now(timezone.utc),
+            created_at=utcnow_naive(),
         )
         self._session.add(event)
         await self._session.flush()
@@ -60,4 +60,3 @@ class EventRepository:
             .limit(limit)
         )
         return list(result.scalars().all())
-

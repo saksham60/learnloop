@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from app.core.config import Settings
-from app.llm.exceptions import InvalidLLMResponseError, UnsupportedProviderError
+from app.llm.exceptions import InvalidLLMResponseError, LLMUnavailableError, UnsupportedProviderError
 from app.llm.gemma_client import GemmaClient
 from app.llm.prompts.focus_prompts import FOCUS_SYSTEM_PROMPT
 from app.llm.prompts.homework_prompts import HOMEWORK_HINT_SYSTEM_PROMPT
@@ -65,31 +65,56 @@ class LLMGateway:
         return SafetyCheckResult(allowed=True, reason="Response passed deterministic safety checks.", flags=flags)
 
     async def explain_focus_area(self, structured_focus_summary: str) -> str:
-        return await self.generate_text(
-            system_prompt=FOCUS_SYSTEM_PROMPT,
-            user_prompt=structured_focus_summary,
-        )
+        try:
+            return await self.generate_text(
+                system_prompt=FOCUS_SYSTEM_PROMPT,
+                user_prompt=structured_focus_summary,
+            )
+        except LLMUnavailableError:
+            return (
+                "These focus areas were chosen from recent attempts, hint usage, and unfinished "
+                "practice. Start with the top item and complete one short practice step."
+            )
 
     async def generate_socratic_response(self, structured_prompt: str) -> str:
-        return await self.generate_text(
-            system_prompt=SOCRATIC_SYSTEM_PROMPT,
-            user_prompt=structured_prompt,
-        )
+        try:
+            return await self.generate_text(
+                system_prompt=SOCRATIC_SYSTEM_PROMPT,
+                user_prompt=structured_prompt,
+            )
+        except LLMUnavailableError:
+            lowered = structured_prompt.lower()
+            if "decision: explain" in lowered:
+                return (
+                    "You have put in effort, so here is the next step: restate the key idea in your "
+                    "own words, solve one small part, then check if that moves you closer to the full answer."
+                )
+            if "give one short hint" in lowered or "decision: hint" in lowered:
+                return "Start by identifying what the question is asking and write down the first fact or formula you already know."
+            return "Let us work step by step. What have you already tried, and which part feels unclear right now?"
 
     async def generate_homework_hint(self, structured_prompt: str) -> str:
-        return await self.generate_text(
-            system_prompt=HOMEWORK_HINT_SYSTEM_PROMPT,
-            user_prompt=structured_prompt,
-        )
+        try:
+            return await self.generate_text(
+                system_prompt=HOMEWORK_HINT_SYSTEM_PROMPT,
+                user_prompt=structured_prompt,
+            )
+        except LLMUnavailableError:
+            return "Break the problem into one smaller step, write your first attempt, and then compare it with the question requirements."
 
     async def generate_progress_answer(self, structured_summary: str, user_question: str) -> str:
-        return await self.generate_text(
-            system_prompt=PROGRESS_SYSTEM_PROMPT,
-            user_prompt=f"Summary:\n{structured_summary}\n\nQuestion:\n{user_question}",
-        )
+        try:
+            return await self.generate_text(
+                system_prompt=PROGRESS_SYSTEM_PROMPT,
+                user_prompt=f"Summary:\n{structured_summary}\n\nQuestion:\n{user_question}",
+            )
+        except LLMUnavailableError:
+            return (
+                "The model gateway is unavailable right now. Use your current focus areas and pending "
+                "homework list as the next study priority, then retry for a fuller explanation."
+            )
 
     async def evaluate_response(self, response_text: str) -> SafetyCheckResult:
         # Deterministic enforcement happens locally first; the LLM prompt is reserved for future policy expansion.
         _ = SAFETY_SYSTEM_PROMPT
         return await self.safety_check(response_text)
-
