@@ -85,13 +85,35 @@ function parseJson<T>(value: string | null, fallback: T): T {
   }
 }
 
+function normalizeDemoState(state: DemoState, fallback: DemoState): DemoState {
+  return {
+    ...fallback,
+    ...state,
+    schools: Array.isArray(state.schools) ? state.schools : fallback.schools,
+    users: Array.isArray(state.users) ? state.users : fallback.users,
+    classes: Array.isArray(state.classes) ? state.classes : fallback.classes,
+    approvals: Array.isArray(state.approvals) ? state.approvals : fallback.approvals,
+    child_access_requests: Array.isArray(state.child_access_requests)
+      ? state.child_access_requests
+      : fallback.child_access_requests,
+    teacher_student_relations: Array.isArray(state.teacher_student_relations)
+      ? state.teacher_student_relations
+      : fallback.teacher_student_relations,
+    parent_student_relations: Array.isArray(state.parent_student_relations)
+      ? state.parent_student_relations
+      : fallback.parent_student_relations,
+  };
+}
+
 export function getDemoState(): DemoState {
   const fallback = createDemoSeedState();
   if (!isDemoModeEnabled() || !canUseStorage()) {
     return fallback;
   }
-  const state = parseJson<DemoState>(window.localStorage.getItem(DEMO_STATE_KEY), fallback);
-  if (!window.localStorage.getItem(DEMO_STATE_KEY)) {
+  const raw = window.localStorage.getItem(DEMO_STATE_KEY);
+  const parsed = parseJson<DemoState>(raw, fallback);
+  const state = normalizeDemoState(parsed, fallback);
+  if (!raw || JSON.stringify(parsed) !== JSON.stringify(state)) {
     window.localStorage.setItem(DEMO_STATE_KEY, JSON.stringify(state));
   }
   return state;
