@@ -15,6 +15,53 @@ import type {
   HomeworkSummary,
 } from "./types";
 
+function buildDemoHomeworkDetail(homeworkId: string): HomeworkDetail | null {
+  const summary = getDemoStudentHomeworkList().find((item) => item.id === homeworkId);
+  if (!summary) return null;
+
+  if (homeworkId === "homework-photosynthesis") {
+    return {
+      id: summary.id,
+      title: summary.title,
+      description: summary.description,
+      status: summary.status,
+      due_at: summary.due_at,
+      questions: [
+        {
+          id: "demo-question-photosynthesis-1",
+          prompt: "What does a plant need in order to make its own food?",
+          order_index: 0,
+        },
+        {
+          id: "demo-question-photosynthesis-2",
+          prompt: "Write the process of photosynthesis in your own words using two short sentences.",
+          order_index: 1,
+        },
+        {
+          id: "demo-question-photosynthesis-3",
+          prompt: "Why is sunlight important in this process?",
+          order_index: 2,
+        },
+      ],
+    };
+  }
+
+  return {
+    id: summary.id,
+    title: summary.title,
+    description: summary.description,
+    status: summary.status,
+    due_at: summary.due_at,
+    questions: [
+      {
+        id: `${summary.id}-question-1`,
+        prompt: summary.description || `Work through ${summary.title} step by step.`,
+        order_index: 0,
+      },
+    ],
+  };
+}
+
 export async function listHomework() {
   if (getDemoProfile()) {
     return getDemoStudentHomeworkList();
@@ -24,11 +71,21 @@ export async function listHomework() {
 }
 
 export async function getHomework(homeworkId: string) {
+  if (getDemoProfile()) {
+    return buildDemoHomeworkDetail(homeworkId);
+  }
   const response = await apiRequest<HomeworkDetail>(`/api/v1/homework/${homeworkId}`);
   return response.data;
 }
 
 export async function submitHomeworkAttempt(homeworkId: string, payload: HomeworkAttemptPayload) {
+  if (getDemoProfile()) {
+    return {
+      attempt_id: `demo-attempt-${Date.now()}`,
+      attempt_number: 1,
+      status: payload.answer_text.trim() ? "saved" : "draft",
+    } satisfies HomeworkAttemptResult;
+  }
   const response = await apiRequest<HomeworkAttemptResult>(`/api/v1/homework/${homeworkId}/attempt`, {
     method: "POST",
     body: payload,
@@ -37,6 +94,12 @@ export async function submitHomeworkAttempt(homeworkId: string, payload: Homewor
 }
 
 export async function submitHomework(homeworkId: string) {
+  if (getDemoProfile()) {
+    return {
+      id: homeworkId,
+      status: "submitted",
+    } satisfies HomeworkSubmitResult;
+  }
   const response = await apiRequest<HomeworkSubmitResult>(`/api/v1/homework/${homeworkId}/submit`, {
     method: "POST",
   });
@@ -44,6 +107,14 @@ export async function submitHomework(homeworkId: string) {
 }
 
 export async function getHomeworkAnalytics(homeworkId: string) {
+  if (getDemoProfile()) {
+    return {
+      class_id: "class-green-7a",
+      student_count: 2,
+      homework_count: 1,
+      summary: `Demo analytics placeholder for ${homeworkId}.`,
+    } satisfies HomeworkAnalytics;
+  }
   const response = await apiRequest<HomeworkAnalytics>(`/api/v1/homework/${homeworkId}/analytics`, {
     treat404AsUnavailable: true,
   });
