@@ -15,6 +15,48 @@ import type {
   HomeworkSummary,
 } from "./types";
 
+function buildDemoHomeworkCoachResponse(payload: HomeworkCoachInput): HomeworkCoachResult {
+  const normalizedMessage = payload.userMessage.toLowerCase();
+
+  if (payload.homeworkId === "homework-photosynthesis") {
+    if (payload.studentSaidStuck) {
+      return {
+        run_id: null,
+        selected_agent: "demo_homework_coach",
+        response:
+          "Start with the inputs and the output. A plant takes in water and carbon dioxide, then uses sunlight to make glucose and release oxygen. Which part of that process would you like to rewrite in your own words first?",
+        observation_count: 0,
+      };
+    }
+
+    if (normalizedMessage.includes("sunlight")) {
+      return {
+        run_id: null,
+        selected_agent: "demo_homework_coach",
+        response:
+          "Focus on sunlight as the energy source. It does not become food itself, but it helps the plant convert water and carbon dioxide into glucose. Can you now explain that in one short sentence?",
+        observation_count: 0,
+      };
+    }
+
+    return {
+      run_id: null,
+      selected_agent: "demo_homework_coach",
+      response:
+        "Try a simple structure: first list what the plant needs, then state what it makes. What two things go in, and what food-related thing comes out?",
+      observation_count: 0,
+    };
+  }
+
+  return {
+    run_id: null,
+    selected_agent: "demo_homework_coach",
+    response:
+      "Start with one clear step you already know, then name the exact part that feels uncertain. I will guide the next step from there.",
+    observation_count: 0,
+  };
+}
+
 function buildDemoHomeworkDetail(homeworkId: string): HomeworkDetail | null {
   const summary = getDemoStudentHomeworkList().find((item) => item.id === homeworkId);
   if (!summary) return null;
@@ -130,6 +172,9 @@ export async function createHomework(payload: HomeworkCreatePayload) {
 }
 
 export async function requestHomeworkCoach(payload: HomeworkCoachInput) {
+  if (getDemoProfile()) {
+    return buildDemoHomeworkCoachResponse(payload);
+  }
   const response = await apiRequest<HomeworkCoachResult>("/api/v1/agents/run", {
     method: "POST",
     body: {

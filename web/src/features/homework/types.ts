@@ -77,7 +77,7 @@ export type HomeworkCoachInput = {
 };
 
 export type HomeworkCoachResult = {
-  run_id: string;
+  run_id: string | null;
   selected_agent: string;
   response: string;
   observation_count: number;
